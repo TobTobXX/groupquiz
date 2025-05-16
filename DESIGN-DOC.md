@@ -1,15 +1,16 @@
-<details><summary>Thinking</summary>
-
-I need to create a more descriptive document in English that explains the flow of each use case, focusing on:
-- Who initiates what request
-- How data flows between components
-- The sequence of events for each interaction
-
-This should be a higher-level document that helps contributors understand the system design without diving into implementation details too much.
-
-</details>
-
 # Kahoot Clone System Design Document
+
+This application is a clone of the popular kahoot quiz application.
+In this app, users can have an account and create and edit their quizzes.
+A Quiz consists of questions, each question also has has 2 to 4 answers and
+some other metadata (max time, points awarded, etc.).
+A quiz can either be private (only the logged in user can see it) or unlisted
+(anyone with link can see it).
+A quiz can be started, upon which a room is opened. Anyone (without logging in)
+can join this room using the provided 6 digit code.
+Then the questions are displayed and the participants have to click the answer
+on their respective device. The faster, the more points, except the answer was
+wrong.
 
 ## Overview
 
