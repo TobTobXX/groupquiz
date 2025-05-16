@@ -15,6 +15,8 @@
 						vscode-langservers-extracted
 						nodejs
 						nodePackages.typescript-language-server
+						yarn
+						supabase-cli
 					];
 				};
 			}
