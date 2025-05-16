@@ -17,6 +17,7 @@
 						nodePackages.typescript-language-server
 						yarn
 						supabase-cli
+						claude-code
 					];
 				};
 			}
