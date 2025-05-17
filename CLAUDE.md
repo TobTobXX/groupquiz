@@ -23,10 +23,25 @@ The application allows users to:
 
 ### Frontend
 
-- React application with React Router for navigation
-- Components organized in `src/components/`
-- Pages in `src/pages/`
-- Supabase client configuration in `src/lib/supabase.js`
+- React application built with Vite, using React Router for navigation
+- Tailwind CSS for styling
+- Components organized in `src/components/`:
+  - `Auth.jsx`: Handles user authentication using Supabase Auth UI
+  - `AnswerEditor.jsx`: Component for creating and editing quiz answer options with correct answer selection
+
+- Pages in `src/pages/`:
+  - `Home.jsx`: Landing page with authentication form
+  - `Dashboard.jsx`: Main dashboard for quiz management (create, edit, delete quizzes and questions)
+
+- App Structure:
+  - `App.jsx`: Main component with auth state management and protected routes
+  - `main.jsx`: Entry point that renders the App component
+  - `lib/supabase.js`: Supabase client configuration for database and auth
+
+- State Management:
+  - Local component state with React hooks
+  - Auth state maintained through Supabase Auth API
+  - Form handling with controlled components
 
 ### Backend
 
