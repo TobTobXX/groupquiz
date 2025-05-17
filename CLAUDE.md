@@ -88,9 +88,6 @@ Use these commands often during work to improve quality:
 # Build the frontend code (and also check it)
 yarn run build
 
-# Run a dev server so the user can test functionality.
-yarn run dev
-
 # Create a new db migration
 supabase migration new <migration-name>
 ```
