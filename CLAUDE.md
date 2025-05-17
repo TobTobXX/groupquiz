@@ -78,6 +78,30 @@ CREATE TABLE questions (
 );
 ```
 
+## Session State System
+
+The quiz session follows a state machine pattern with the following states:
+
+### Session States
+- `waiting`: Initial lobby state where participants can join before quiz starts
+- `question`: Current question is active, participants can submit answers
+- `answer_reveal`: Shows correct answer and distribution of participant responses
+- `scoreboard`: Displays current rankings between questions
+- `completed`: Quiz has ended, final results shown
+
+### State Transitions
+- waiting → question (host starts quiz)
+- question → answer_reveal (when time expires or host manually advances)
+- answer_reveal → scoreboard (host advances)
+- scoreboard → question (if more questions remain) or completed (if quiz is done)
+
+### Design Considerations
+- Participants can join late at any stage
+- Current question index is tracked to manage progression
+- Timestamps record when questions are shown and answers submitted for scoring
+- Host controls advancement between states
+- Real-time synchronization ensures all participants see the same state
+
 ## Behaviour
 
 ### Common commands
