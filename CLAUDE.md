@@ -94,9 +94,10 @@ supabase migration new <migration-name>
 
 ### Workflow
 
-Important:
-Changes should almost always be commited to git. Only omit this step if you are
-really sure.
+IMPORTANT:
+CHANGES SHOULD ALWAYS BE COMMITTED TO GIT. Only omit this step if you are really
+sure about that. Otherwise, the git commit has to be done by the user and he
+would be annoyed. ALWAYS TRY TO COMMIT}
 
 When database changes were made, run `supabase db push` yourself. The user will
 automatically be prompted to confirm/deny.
