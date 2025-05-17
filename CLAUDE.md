@@ -48,6 +48,7 @@ The application allows users to:
 - Supabase PostgreSQL database with the following main tables:
   - `quizzes`: Stores quiz metadata (title, owner, visibility)
   - `questions`: Stores questions and their answer options
+  - `sessions`: Stores quiz session data including state and participant join codes
 
 - Security implemented through Row Level Security (RLS) policies:
   - Users can only modify their own quizzes and questions
@@ -75,6 +76,20 @@ CREATE TABLE questions (
 	answers JSONB NOT NULL,
 	max_time INTEGER NOT NULL DEFAULT 30, -- time in seconds
 	points INTEGER NOT NULL DEFAULT 1000
+);
+
+CREATE TYPE session_state AS ENUM ('waiting', 'question', 'answer_reveal', 'scoreboard', 'completed');
+
+CREATE TABLE sessions (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	code TEXT NOT NULL UNIQUE, -- Join code for participants
+	quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+	host_id UUID NOT NULL REFERENCES auth.users(id), -- Quiz host/owner
+	current_state session_state NOT NULL DEFAULT 'waiting',
+	current_question_index INTEGER NOT NULL DEFAULT 0, -- Tracks progression through questions
+	state_changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- When the current state was entered
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	ended_at TIMESTAMP WITH TIME ZONE -- NULL until session completed
 );
 ```
 
