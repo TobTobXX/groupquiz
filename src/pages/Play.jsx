@@ -349,6 +349,12 @@ export default function Play() {
           <div className="flex flex-col items-center gap-2 text-center">
             <p className="text-4xl font-bold">Game over</p>
             <p className="text-slate-300 text-lg">Thanks for playing, <strong>{nickname}</strong>!</p>
+            <button
+              onClick={() => navigate('/')}
+              className="mt-2 text-indigo-400 hover:text-indigo-300 text-sm transition-colors"
+            >
+              Back to home
+            </button>
           </div>
         )}
 

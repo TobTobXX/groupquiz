@@ -46,10 +46,19 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col gap-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Welcome</h1>
+    <div className="min-h-screen flex flex-col">
+      <div className="flex justify-start px-6 py-4">
+        <button
+          onClick={() => navigate('/')}
+          className="text-sm text-slate-400 hover:text-white transition-colors"
+        >
+          &larr; Back to home
+        </button>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col gap-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Welcome</h1>
           <p className="text-slate-400 text-sm mt-1">
             {mode === 'signin' ? 'Sign in to your account' : 'Create an account'}
           </p>
@@ -119,6 +128,7 @@ export default function Login() {
             {magicLink ? 'Use password instead' : 'Sign in with magic link'}
           </button>
         )}
+        </div>
       </div>
     </div>
   )
