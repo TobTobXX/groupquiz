@@ -8,8 +8,8 @@ function SlotIcon({ name, className }) {
   if (name === 'circle') {
     return <svg width={size} height={size} viewBox="0 0 40 40" className={className}><circle cx="20" cy="20" r="18" fill={fill} /></svg>
   }
-  if (name === 'diamond') {
-    return <svg width={size} height={size} viewBox="0 0 40 40" className={className}><rect x="6" y="6" width="20" height="20" transform="rotate(45 16 16)" fill={fill} /></svg>
+    if (name === 'diamond') {
+    return <svg width={size} height={size} viewBox="0 0 40 40" className={className}><rect x="6" y="6" width="20" height="20" transform="rotate(45 20 20)" fill={fill} /></svg>
   }
   if (name === 'triangle') {
     return <svg width={size} height={size} viewBox="0 0 40 40" className={className}><polygon points="20,4 38,36 2,36" fill={fill} /></svg>
@@ -50,6 +50,7 @@ export default function Play() {
   const questionsRef = useRef([])
   const prevQuestionIndexRef = useRef(null)
   const currentQuestionSlotsRef = useRef(null)
+  const channelRef = useRef(null)
   const [currentQuestionSlots, setCurrentQuestionSlots] = useState(null)
   const [correctSlotIndex, setCorrectSlotIndex] = useState(null)
 
@@ -160,7 +161,6 @@ export default function Play() {
           if (!session.question_open) {
             await loadFeedback(currentQuestion, session.id, playerId, session.current_question_slots ?? null)
           } else {
-            // Question open: restore submitted answer if player already answered
             const { data: pa } = await supabase
               .from('player_answers')
               .select('answer_id')
@@ -175,7 +175,11 @@ export default function Play() {
         }
       }
 
-      channel = supabase
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+
+      const channel = supabase
         .channel(`player-session-${code}`)
         .on(
           'postgres_changes',
@@ -190,7 +194,6 @@ export default function Play() {
             setCurrentQuestionIndex(newIndex)
             setCurrentQuestionSlots(newSlots)
 
-            // Reset answer state when question index changes
             if (newIndex !== prevQuestionIndexRef.current) {
               prevQuestionIndexRef.current = newIndex
               setSubmittedAnswerId(null)
@@ -220,10 +223,8 @@ export default function Play() {
                   setQuestions(sorted)
                   questionsRef.current = sorted
                 })
-              return
             }
 
-            // Detect question_open transition: true → false (host closed the question)
             if (wasActiveRef.current && newQuestionOpen === false) {
               const oldIndex = payload.old.current_question_index ?? newIndex
               const closedQuestion = questionsRef.current[oldIndex]
@@ -236,13 +237,16 @@ export default function Play() {
         )
         .subscribe()
 
+      channelRef.current = channel
     }
 
-    let channel = null
     load()
 
     return () => {
-      if (channel) supabase.removeChannel(channel)
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [code])
 

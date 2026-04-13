@@ -367,6 +367,12 @@ export default function Host() {
                 Question <span className="text-white font-bold">{currentQuestionIndex + 1}</span> / {totalQuestions}
               </p>
 
+              {hostQuestions[currentQuestionIndex] && (
+                <p className="text-2xl font-bold text-center leading-snug px-2">
+                  {hostQuestions[currentQuestionIndex].question_text}
+                </p>
+              )}
+
               {timeRemaining !== null && (
                 <div className="text-6xl font-bold text-white tabular-nums">
                   {timeRemaining}
@@ -381,11 +387,11 @@ export default function Host() {
                     return (
                       <div
                         key={slot.slot_index}
-                        className="flex flex-col items-center gap-1 p-3 rounded-xl"
+                        className="flex items-center gap-3 p-3 rounded-xl min-h-20"
                         style={{ backgroundColor: SLOT_COLORS[slot.color] }}
                       >
-                        <SlotIcon name={slot.icon} className="text-white" />
-                        <span className="text-white text-xs font-medium text-center leading-tight">
+                        <SlotIcon name={slot.icon} className="text-white flex-shrink-0" />
+                        <span className="text-white font-semibold text-center flex-1 leading-tight">
                           {answer?.answer_text ?? ''}
                         </span>
                       </div>
