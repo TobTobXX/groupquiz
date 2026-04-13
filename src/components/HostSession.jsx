@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import SlotIcon from './SlotIcon'
 import { SLOT_COLOR_HEX } from '../lib/slots'
+import { byOrderIndex } from '../lib/utils'
 
 // Shown at /host/:sessionId. Manages the live game: waiting room, active
 // question display, and the finished state.
@@ -50,7 +51,7 @@ export default function HostSession({ sessionId }) {
             .order('order_index')
             .then(({ data: qs }) => {
               if (qs) {
-                setHostQuestions(qs.map((q) => ({ ...q, answers: [...q.answers].sort((a, b) => a.order_index - b.order_index) })))
+                setHostQuestions(qs.map((q) => ({ ...q, answers: [...q.answers].sort(byOrderIndex) })))
               }
             })
         }
@@ -191,7 +192,7 @@ export default function HostSession({ sessionId }) {
       .select('id, question_text, time_limit, points, answers(id, answer_text, order_index, is_correct)')
       .eq('quiz_id', quizId)
       .order('order_index')
-    const sortedQs = qs ? qs.map((q) => ({ ...q, answers: [...q.answers].sort((a, b) => a.order_index - b.order_index) })) : []
+    const sortedQs = qs ? qs.map((q) => ({ ...q, answers: [...q.answers].sort(byOrderIndex) })) : []
     const firstQuestionId = sortedQs[0]?.id
     if (!firstQuestionId) { setError('No questions found'); return }
 

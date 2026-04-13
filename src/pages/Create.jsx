@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import QuestionEditor from '../components/QuestionEditor'
+import { byOrderIndex } from '../lib/utils'
 
 function blankQuestion() {
   return {
@@ -73,7 +74,7 @@ export default function Create() {
                 points: q.points ?? 1000,
                 image_url: q.image_url ?? '',
                 answers: q.answers
-                  ? [...q.answers].sort((a, b) => a.order_index - b.order_index).map((a) => ({
+                  ? [...q.answers].sort(byOrderIndex).map((a) => ({
                       id: a.id,
                       answer_text: a.answer_text ?? '',
                       is_correct: a.is_correct ?? false,

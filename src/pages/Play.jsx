@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SlotIcon from '../components/SlotIcon'
 import { SLOT_COLOR_CLASSES } from '../lib/slots'
+import { byOrderIndex } from '../lib/utils'
 
 export default function Play() {
   const { code } = useParams()
@@ -128,7 +129,7 @@ export default function Play() {
 
         const sorted = qs.map((q) => ({
           ...q,
-          answers: [...q.answers].sort((a, b) => a.order_index - b.order_index),
+          answers: [...q.answers].sort(byOrderIndex),
         }))
         setQuestions(sorted)
         questionsRef.current = sorted
@@ -195,7 +196,7 @@ export default function Play() {
                   if (error) { setError(error.message); return }
                   const sorted = data.map((q) => ({
                     ...q,
-                    answers: [...q.answers].sort((a, b) => a.order_index - b.order_index),
+                    answers: [...q.answers].sort(byOrderIndex),
                   }))
                   setQuestions(sorted)
                   questionsRef.current = sorted
