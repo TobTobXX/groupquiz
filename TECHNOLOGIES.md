@@ -109,21 +109,30 @@ All tables have RLS enabled. As of v0.9, user-scoped policies are in place: `qui
 
 ### Page hierarchy and navigation
 
+All routes are static (no dynamic path segments). Session/quiz context is passed via query parameters.
+
 ```
-/                   Home — join a game (code + nickname) or navigate to host
-├── /login          Login — email/password auth for quiz creators
-├── /host           HostLibrary — browse quizzes, pick one to host (creator hub)
-│   └── /host/:id   HostSession — live game management
-│                     ├── waiting   HostLobby — players gather, host starts game
-│                     ├── active    HostActiveQuestion — question in progress
-│                     └── finished  end screen (back to library or host again)
-├── /join/:code     Join — join by URL; auto-rejoins if a stored entry exists
-├── /play/:code     Play — player game interface (waiting → answering → feedback)
-├── /create         Create — new quiz editor  [protected]
-└── /edit/:quizId   Create — edit existing quiz  [protected]
+/                          Home — join a game (code + nickname) or navigate to host
+/login                     Login — email/password auth for quiz creators
+/host                      HostLibrary — browse quizzes, pick one to host
+/host?sessionId=<uuid>     HostSession — live game management
+/join?code=<join_code>     Join — join by URL; auto-rejoins if a stored entry exists
+/play?code=<join_code>     Play — player game interface (waiting → answering → feedback)
+/create                    Create — new quiz editor  [protected]
+/create?quizId=<uuid>      Create — edit existing quiz  [protected]
 ```
 
-`/library` redirects to `/host`.
+`/library` redirects to `/host`. `/edit` is an alias for `/create` and also accepts `?quizId=<uuid>`.
+
+### Static hosting and routing
+
+Because all routes are static paths, the app uses Vite's [multi-page app](https://vite.dev/guide/build#multi-page-app) build mode. Each route has its own `<route>/index.html` at the project root (e.g. `host/index.html`, `join/index.html`). Vite is configured in `vite.config.js` with `build.rolldownOptions.input` listing all route HTML files.
+
+This produces a `dist/` tree where every route is a real directory with its own `index.html`, so a static file server (GitHub Pages, Netlify, etc.) can serve any route directly without redirect hacks or fallback rules.
+
+### Route entry points
+
+Each route directory at the project root contains an `index.html` that is identical to the root `index.html` and serves as the Vite entry point for that route: `login/`, `host/`, `join/`, `play/`, `create/`, `edit/`, `library/`.
 
 ### Frontend source (`src/`)
 
