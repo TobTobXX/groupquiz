@@ -34,6 +34,32 @@ export default function Play() {
   useEffect(() => { questionsRef.current = questions }, [questions])
   useEffect(() => { sessionIdRef.current = sessionId }, [sessionId])
 
+  async function loadFeedback(closedQuestion, sid, pid) {
+    setFeedbackShown(true)
+    if (closedQuestion && pid) {
+      const { data: pa } = await supabase
+        .from('player_answers')
+        .select('answer_id, answers(is_correct)')
+        .eq('player_id', pid)
+        .eq('question_id', closedQuestion.id)
+        .maybeSingle()
+      const correct = pa?.answers?.is_correct ?? false
+      setSubmittedAnswerId(pa?.answer_id ?? null)
+      setAnswerSubmitted(!!pa)
+      setIsCorrect(pa ? correct : null)
+      setPointsEarned(correct ? (closedQuestion.points ?? 0) : 0)
+    }
+    if (sid) {
+      const { data: lb } = await supabase
+        .from('players')
+        .select('id, nickname, score')
+        .eq('session_id', sid)
+        .order('score', { ascending: false })
+        .order('nickname')
+      if (lb) setLeaderboard(lb)
+    }
+  }
+
   useEffect(() => {
     async function load() {
       const { data: session, error: sessionError } = await supabase
@@ -90,9 +116,24 @@ export default function Play() {
         setQuestions(sorted)
         questionsRef.current = sorted
 
-        // If question is already closed when joining mid-game, show feedback
-        if (!session.question_open) {
-          setFeedbackShown(true)
+        const currentQuestion = sorted[session.current_question_index]
+        if (currentQuestion) {
+          if (!session.question_open) {
+            // Feedback phase: restore full feedback state
+            await loadFeedback(currentQuestion, session.id, playerId)
+          } else {
+            // Question open: restore submitted answer if player already answered
+            const { data: pa } = await supabase
+              .from('player_answers')
+              .select('answer_id')
+              .eq('player_id', playerId)
+              .eq('question_id', currentQuestion.id)
+              .maybeSingle()
+            if (pa) {
+              setSubmittedAnswerId(pa.answer_id)
+              setAnswerSubmitted(true)
+            }
+          }
         }
       }
 
@@ -142,38 +183,10 @@ export default function Play() {
             // Detect question_open transition: true → false (host closed the question)
             if (wasActiveRef.current && newQuestionOpen === false) {
               const oldIndex = payload.old.current_question_index ?? newIndex
-              const qs = questionsRef.current
-              const closedQuestion = qs[oldIndex]
+              const closedQuestion = questionsRef.current[oldIndex]
               const sid = sessionIdRef.current
               const pid = localStorage.getItem('player_id')
-
-              setFeedbackShown(true)
-
-              if (closedQuestion && pid) {
-                supabase
-                  .from('player_answers')
-                  .select('answer_id, answers(is_correct)')
-                  .eq('player_id', pid)
-                  .eq('question_id', closedQuestion.id)
-                  .maybeSingle()
-                  .then(({ data: pa }) => {
-                    const correct = pa?.answers?.is_correct ?? false
-                    setIsCorrect(correct)
-                    setPointsEarned(correct ? (closedQuestion.points ?? 0) : 0)
-                  })
-              }
-
-              if (sid) {
-                supabase
-                  .from('players')
-                  .select('id, nickname, score')
-                  .eq('session_id', sid)
-                  .order('score', { ascending: false })
-                  .order('nickname')
-                  .then(({ data: lb }) => {
-                    if (lb) setLeaderboard(lb)
-                  })
-              }
+              loadFeedback(closedQuestion, sid, pid)
             }
           }
         )
