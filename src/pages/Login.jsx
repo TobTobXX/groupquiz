@@ -21,7 +21,7 @@ export default function Login() {
     if (magicLink) {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin + '/library' },
+        options: { emailRedirectTo: window.location.origin + '/host' },
       })
       setLoading(false)
       if (error) setError(error.message)
@@ -33,7 +33,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       setLoading(false)
       if (error) setError(error.message)
-      else navigate('/library')
+      else navigate('/host')
     } else {
       const { error } = await supabase.auth.signUp({ email, password })
       setLoading(false)

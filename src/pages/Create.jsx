@@ -171,7 +171,7 @@ export default function Create() {
       return
     }
 
-    navigate('/library')
+    navigate('/host')
   }
 
   // Edit path: upsert questions/answers one-by-one so we can diff against the DB
@@ -250,7 +250,7 @@ export default function Create() {
       }
     }
 
-    navigate('/library')
+    navigate('/host')
   }
 
   async function handleSave() {

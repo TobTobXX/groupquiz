@@ -5,7 +5,6 @@ import Host from './pages/Host'
 import Play from './pages/Play'
 import Create from './pages/Create'
 import Login from './pages/Login'
-import Library from './pages/Library'
 import Join from './pages/Join'
 
 function ProtectedRoute({ children }) {
@@ -40,14 +39,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/library"
-        element={
-          <ProtectedRoute>
-            <Library />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/library" element={<Navigate to="/host" replace />} />
     </Routes>
   )
 }

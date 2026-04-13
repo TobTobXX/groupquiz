@@ -14,12 +14,13 @@ function generateJoinCode() {
 
 // Shown at /host (no active session). Lists quizzes and lets the host start a session.
 export default function HostLibrary() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [publicQuizzes, setPublicQuizzes] = useState([])
   const [ownQuizzes, setOwnQuizzes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [deleting, setDeleting] = useState(null)
 
   useEffect(() => {
     supabase
@@ -37,7 +38,7 @@ export default function HostLibrary() {
     if (!user) return
     supabase
       .from('quizzes')
-      .select('id, title, creator_id')
+      .select('id, title, creator_id, created_at')
       .eq('creator_id', user.id)
       .then(({ data }) => {
         if (data) setOwnQuizzes(data)
@@ -58,26 +59,30 @@ export default function HostLibrary() {
     }
   }
 
+  async function handleDelete(quizId) {
+    if (!confirm('Delete this quiz? This cannot be undone.')) return
+    setDeleting(quizId)
+    const { error: delErr } = await supabase.from('quizzes').delete().eq('id', quizId)
+    setDeleting(null)
+    if (delErr) {
+      setError(delErr.message)
+    } else {
+      setOwnQuizzes((qs) => qs.filter((q) => q.id !== quizId))
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Host</h1>
           {user ? (
-            <div className="flex items-center gap-3">
-              <Link
-                to="/library"
-                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                My quizzes
-              </Link>
-              <button
-                onClick={() => supabase.auth.signOut()}
-                className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
-              >
-                Log out
-              </button>
-            </div>
+            <button
+              onClick={signOut}
+              className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              Log out
+            </button>
           ) : (
             <Link
               to="/login"
@@ -102,7 +107,12 @@ export default function HostLibrary() {
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">My Quizzes</h2>
             {ownQuizzes.map((quiz) => (
               <div key={quiz.id} className="bg-slate-800 rounded-xl px-5 py-4 flex items-center justify-between">
-                <span className="font-medium">{quiz.title}</span>
+                <div>
+                  <span className="font-medium">{quiz.title}</span>
+                  <p className="text-slate-500 text-xs mt-0.5">
+                    {new Date(quiz.created_at).toLocaleDateString()}
+                  </p>
+                </div>
                 <div className="flex items-center gap-2">
                   <Link
                     to={`/edit/${quiz.id}`}
@@ -110,6 +120,13 @@ export default function HostLibrary() {
                   >
                     Edit
                   </Link>
+                  <button
+                    onClick={() => handleDelete(quiz.id)}
+                    disabled={deleting === quiz.id}
+                    className="text-sm text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
+                  >
+                    {deleting === quiz.id ? 'Deleting…' : 'Delete'}
+                  </button>
                   <button
                     onClick={() => createSession(quiz.id)}
                     className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
