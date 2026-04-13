@@ -2,24 +2,29 @@
 
 A fast, clean, self-hostable real-time quiz platform. No accounts required to play, no artificial limits, no noise in the UI.
 
+Primary target: classroom use. The host is typically a teacher; the quiz creator is a teacher (the same or another) or occasionally a student. Leisure use is welcome but not the design priority.
+
 ## Roles
 
 ### Quiz Creator
 
 - Create and edit quizzes with an arbitrary number of questions.
 - Each question has 2–4 answer options, with one or more marked correct.
-- Supported question types: multiple choice, true/false.
+- Supported question types: multiple choice (2–4 options); true/false is just multiple choice locked to 2 options.
 - Set per-question time limits and point values.
-- Attach images to questions or answer options.
+- Attach images to questions.
 - Manage a personal library of quizzes (requires account).
+- Quizzes can be marked private; private quizzes require the creator to be logged in to host.
 
 ### Host
 
-- Start a live session from any saved quiz.
+- Start a live session from any public quiz, or from their own private quizzes when logged in.
 - Share a short join code with participants — no app or account needed on their end.
-- Full session control: pause, skip forward/back, and reveal answers manually.
+- Sessions advance linearly — questions play in order, one at a time.
 - See a live participant list and per-question response progress during the game.
-- End the session early or replay a question.
+- Questions close automatically when the timer expires or all players have answered; the host can also close a question early. After closing, a leaderboard is shown and the host manually advances — useful for discussing the answer before moving on.
+- Per-question timer is configurable; a question can also have no time limit.
+- End the session early.
 
 ### Player
 

@@ -14,7 +14,7 @@ All authorization is enforced via Postgres Row Level Security (RLS) policies. Bu
 - **PostgreSQL** — primary data store for quizzes, questions, sessions, answers, and scores.
 - **Row Level Security (RLS)** — enforces who can read and write what, directly at the database level.
 - **Supabase Auth** — handles quiz creator accounts. Players do not need an account.
-- **Supabase Realtime** — WebSocket-based pub/sub over Postgres changes. Used for syncing session state across host and all players in real time.
+- **Supabase Realtime** — WebSocket-based pub/sub over Postgres changes. Used for syncing session state across host and all players in real time. Enabled on `sessions`, `players`, and `player_answers`.
 - **Postgres Functions** — used for logic that must run server-side, most importantly score calculation on answer submission.
 
 ## Database schema
@@ -56,6 +56,7 @@ All tables have RLS enabled. Until v0.8 there are open `allow all` policies; pro
 | `join_code` | text | not null; unique; 6-char uppercase alphanumeric |
 | `state` | text | `'waiting'` → `'active'` → `'finished'` |
 | `current_question_index` | integer | nullable; index into questions |
+| `question_open` | boolean | default true; controls whether the current question accepts answers |
 | `created_at` | timestamptz | default now() |
 
 ### `players`
@@ -67,9 +68,55 @@ All tables have RLS enabled. Until v0.8 there are open `allow all` policies; pro
 | `score` | integer | not null; default 0 |
 | `joined_at` | timestamptz | default now() |
 
+### `player_answers`
+| column | type | notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `player_id` | uuid FK → players | cascade delete |
+| `question_id` | uuid FK → questions | cascade delete |
+| `answer_id` | uuid FK → answers | |
+| `created_at` | timestamptz | default now() |
+| — | unique | `(player_id, question_id)` — one answer per player per question |
+
+## File index
+
+### Planning documents
+
+| File | Purpose |
+|---|---|
+| `GOAL.md` | Product vision — what we're building and for whom |
+| `TECHNOLOGIES.md` | Stack decisions, architecture, and full DB schema |
+| `STEPS.md` | Nine incremental versions (v0.1–v0.9) with checklists |
+| `TODOS.md` | Detailed task list for the current version |
+| `AGENTS.md` | Coding agent instructions and lessons learned |
+
+### Frontend source (`src/`)
+
+| File | Purpose |
+|---|---|
+| `src/main.jsx` | React entry point; mounts app with `BrowserRouter` |
+| `src/App.jsx` | Route definitions: `/`, `/host`, `/host/:sessionId`, `/play/:code` |
+| `src/index.css` | Tailwind CSS import + dark base styles |
+| `src/lib/supabase.js` | Supabase client singleton |
+| `src/pages/Home.jsx` | Landing page — player enters join code + nickname |
+| `src/pages/Host.jsx` | Host interface — quiz selection, session management, question progression |
+| `src/pages/Play.jsx` | Player interface — answer questions, see feedback + leaderboard |
+
+### Database migrations (`supabase/migrations/`)
+
+| File | What it does |
+|---|---|
+| `20260413123158_initial.sql` | Creates core schema: `quizzes`, `questions`, `answers`, `sessions`, `players` |
+| `20260413123159_seed.sql` | Inserts sample quiz "General Knowledge" with 3 questions |
+| `20260413123160_open_policies.sql` | Open `allow all` RLS policies for all 5 core tables |
+| `20260413130000_enable_realtime_sessions.sql` | Adds `sessions` to the Supabase realtime publication |
+| `20260414000000_player_answers.sql` | Adds `player_answers` table + `question_open` on `sessions`; enables realtime on `player_answers` and `players` |
+| `20260414000001_player_answers_policy.sql` | Open `allow all` RLS policy for `player_answers` |
+
 ## Frontend: React
 
-- **React** — UI framework. Supabase Realtime subscriptions integrate naturally with React state via `useEffect`.
-- **Supabase JS client** — communicates with Supabase directly from the browser (REST for data, WebSockets for Realtime).
-- **Vite** — build tool and dev server.
-- **Tailwind CSS** — utility-first styling, no custom CSS infrastructure needed.
+- **React 19** — UI framework. Supabase Realtime subscriptions integrate naturally with React state via `useEffect`.
+- **React Router v7** — client-side routing.
+- **Supabase JS client v2** — communicates with Supabase directly from the browser (REST for data, WebSockets for Realtime).
+- **Vite 8** — build tool and dev server.
+- **Tailwind CSS v4** — utility-first styling via the `@tailwindcss/vite` plugin; no custom CSS infrastructure needed.
