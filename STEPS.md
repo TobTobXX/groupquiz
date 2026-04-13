@@ -36,10 +36,10 @@ Polish the player-facing screens. Focus on clarity and responsiveness — this i
 
 Wire up Supabase Realtime. When the host advances the session state (starts the game, moves to the next question), all connected player screens update automatically without a page reload.
 
-- [ ] Supabase Realtime subscriptions set up on the client
-- [ ] Host can advance session state (start, next question)
-- [ ] Player screens update automatically when session state changes
-- [ ] Current question is displayed correctly on all player screens
+- [x] Supabase Realtime subscriptions set up on the client
+- [x] Host can advance session state (start, next question)
+- [x] Player screens update automatically when session state changes
+- [x] Current question is displayed correctly on all player screens
 
 ## v0.5 — Answer submission and basic scoring
 

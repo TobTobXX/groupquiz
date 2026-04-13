@@ -45,6 +45,22 @@ export default function Host() {
       setJoinCode(code)
       setSessionId(data.id)
       setQuizId(selectedQuizId)
+
+      const channel = supabase
+        .channel(`host-session-${data.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${data.id}` },
+          (payload) => {
+            setSessionState(payload.new.state)
+            setCurrentQuestionIndex(payload.new.current_question_index)
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
   }
 
@@ -62,8 +78,6 @@ export default function Host() {
     if (error) { setError(error.message); return }
 
     setTotalQuestions(count)
-    setCurrentQuestionIndex(0)
-    setSessionState('active')
   }
 
   async function nextQuestion() {
@@ -73,7 +87,6 @@ export default function Host() {
       .update({ current_question_index: next })
       .eq('id', sessionId)
     if (error) { setError(error.message); return }
-    setCurrentQuestionIndex(next)
   }
 
   async function endGame() {
@@ -82,7 +95,6 @@ export default function Host() {
       .update({ state: 'finished' })
       .eq('id', sessionId)
     if (error) { setError(error.message); return }
-    setSessionState('finished')
   }
 
   return (

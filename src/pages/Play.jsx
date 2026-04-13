@@ -52,11 +52,14 @@ export default function Play() {
       setSessionState(session.state)
       setCurrentQuestionIndex(session.current_question_index)
 
-      if (session.state === 'active') {
+      const quizId = session.quiz_id
+      const wasActive = session.state === 'active'
+
+      if (wasActive) {
         const { data: qs, error: qsError } = await supabase
           .from('questions')
           .select('id, question_text, order_index, answers(id, answer_text, is_correct, order_index)')
-          .eq('quiz_id', session.quiz_id)
+          .eq('quiz_id', quizId)
           .order('order_index')
 
         if (qsError) { setError(qsError.message); return }
@@ -66,6 +69,41 @@ export default function Play() {
           answers: [...q.answers].sort((a, b) => a.order_index - b.order_index),
         }))
         setQuestions(sorted)
+      }
+
+      const channel = supabase
+        .channel(`player-session-${code}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `join_code=eq.${code}` },
+          (payload) => {
+            const newState = payload.new.state
+            const newIndex = payload.new.current_question_index
+
+            setSessionState(newState)
+            setCurrentQuestionIndex(newIndex)
+
+            if (!wasActive && newState === 'active') {
+              supabase
+                .from('questions')
+                .select('id, question_text, order_index, answers(id, answer_text, is_correct, order_index)')
+                .eq('quiz_id', quizId)
+                .order('order_index')
+                .then(({ data, error }) => {
+                  if (error) { setError(error.message); return }
+                  const sorted = data.map((q) => ({
+                    ...q,
+                    answers: [...q.answers].sort((a, b) => a.order_index - b.order_index),
+                  }))
+                  setQuestions(sorted)
+                })
+            }
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
       }
     }
 
