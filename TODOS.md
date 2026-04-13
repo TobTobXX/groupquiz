@@ -97,12 +97,12 @@ Run the dev server and walk through the full flow manually in two browser window
 
 > **User action required:** `nix shell nixpkgs#nodejs -c npm run dev`. **Context:** The full flow: (1) player joins via home page → sees waiting screen; (2) host starts game → player sees question, no feedback yet; (3) player clicks an answer → "Answer submitted" shown, buttons disabled; (4) host clicks "Close question" → player sees correct/wrong + points + leaderboard; (5) host clicks "Next question" → player sees new question, can answer again; (6) host repeats → leaderboard persists/grows across questions; (7) host ends game → game over screen.
 
-- [ ] Player joins via home page and lands on waiting screen
-- [ ] Host starts game → player sees first question, answers are interactive
-- [ ] Player clicks an answer → "Answer submitted" shown, buttons disabled
-- [ ] Host sees live "X / Y answered" count
-- [ ] Host clicks "Close question" → player sees correct/wrong feedback and points earned
-- [ ] Player sees leaderboard replacing the question area
-- [ ] Host clicks "Next question" → player sees the next question, can submit again
-- [ ] Process repeats for all questions
-- [ ] Host ends game → player sees game over screen
+- [x] Player joins via home page and lands on waiting screen
+- [x] Host starts game → player sees first question, answers are interactive
+- [x] Player clicks an answer → "Answer submitted" shown, buttons disabled
+- [x] Host sees live "X / Y answered" count
+- [x] Host clicks "Close question" → player sees correct/wrong feedback and points earned
+- [x] Player sees leaderboard replacing the question area
+- [x] Host clicks "Next question" → player sees the next question, can submit again
+- [x] Process repeats for all questions
+- [x] Host ends game → player sees game over screen

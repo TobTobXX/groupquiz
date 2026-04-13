@@ -45,11 +45,11 @@ Wire up Supabase Realtime. When the host advances the session state (starts the 
 
 Players can submit an answer during a question. Answers are stored in the database. After the host closes the question, players see whether they were correct and how many points they earned. Score calculation happens client-side for now. A simple between-question leaderboard is shown.
 
-- [ ] Players can submit an answer while a question is open
-- [ ] Answers are stored in the database
-- [ ] Players see correct/wrong feedback and points earned after the question closes
-- [ ] Between-question leaderboard is shown
-- [ ] Host sees live response count during a question
+- [x] Players can submit an answer while a question is open
+- [x] Answers are stored in the database
+- [x] Players see correct/wrong feedback and points earned after the question closes
+- [x] Between-question leaderboard is shown
+- [x] Host sees live response count during a question
 
 ## v0.6 — Server-side score calculation
 
@@ -86,7 +86,6 @@ Add Supabase Auth for quiz creators (email/password or magic link). Each quiz be
 
 Items deferred to a later version. The version marker indicates the earliest point where it makes sense to address each one.
 
-- [x] **v0.4** — Host loses session state on page refresh; all session data (session ID, state, question index) lives in component state only. Recovery requires adding URL-based session lookup when real-time is wired up.
 - [ ] **v0.5** — Player can re-answer a question by refreshing the page, and currently sees correct/wrong feedback immediately (client-side). Instead: submitted answers should be stored in the DB on selection, and feedback should only be revealed to all players simultaneously when the host closes the question (advances or ends the game). This prevents one player from seeing the correct answer early and sharing it with the group.
 - [ ] **v0.6** — `is_correct` is fetched for all answers and visible in the browser network tab before the player answers, making it trivial to cheat. Addressed when score calculation moves server-side (client no longer needs `is_correct` upfront).
 - [ ] **v0.8** — Replace open `allow all` RLS policies with proper user-scoped policies (currently every anonymous client can read and write everything).
