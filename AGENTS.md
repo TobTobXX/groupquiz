@@ -27,7 +27,7 @@ Use this when TODOS.md is stale (still shows the previous version) and needs to 
    - A short prose description of the goal.
    - A `> blockquote` briefing stating: which files are relevant, specific things to watch out for (API quirks, constraints from earlier versions, ordering dependencies), and whether user action is required.
    - A checklist of concrete, granular tasks — each task is one actionable step, not a summary.
-6. **Carry forward technical debt** — copy the technical debt block from the previous TODOS.md, keeping only items still unresolved, with their version markers intact.
+6. **Carry forward technical debt** — technical debt lives permanently in STEPS.md (see there), not in TODOS.md. Do not copy it into TODOS.md on each new version.
 
 ### Workflow B — Implementing a section
 
