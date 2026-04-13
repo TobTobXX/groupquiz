@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SlotIcon from '../components/SlotIcon'
+import FeedbackView from '../components/FeedbackView'
 import { SLOT_COLOR_CLASSES } from '../lib/slots'
 import { byOrderIndex } from '../lib/utils'
 
@@ -344,46 +345,16 @@ export default function Play() {
           </div>
         )}
 
-        {/* Leaderboard view (replaces question when feedback is shown) */}
+        {/* Feedback + leaderboard (replaces question when it closes) */}
         {question && feedbackShown && currentQuestionSlots && (
-          <div className="w-full max-w-xl flex flex-col gap-4">
-            {/* Result banner */}
-            {isCorrect !== null && (
-              <div className={`rounded-xl px-6 py-4 text-center font-bold text-xl ${isCorrect ? 'bg-emerald-600' : 'bg-red-600'}`}>
-                {isCorrect ? `Correct! +${pointsEarned} points` : 'Wrong'}
-              </div>
-            )}
-            {isCorrect === null && (
-              <div className="rounded-xl px-6 py-4 text-center font-bold text-xl bg-slate-700">
-                You didn't answer
-              </div>
-            )}
-
-            {/* Slot grid with feedback */}
-            <div className="grid grid-cols-2 gap-3">
-              {currentQuestionSlots.map((slot) => (
-                <div key={slot.slot_index} className={slotClassName(slot.slot_index, slot.color)}>
-                  <SlotIcon name={slot.icon} />
-                </div>
-              ))}
-            </div>
-
-            {/* Leaderboard */}
-            <div className="flex flex-col gap-2">
-              {leaderboard.map((p, i) => (
-                <div
-                  key={p.id}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === playerId ? 'bg-indigo-700' : 'bg-slate-800'}`}
-                >
-                  <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
-                  <span className="flex-1 font-semibold">{p.nickname}</span>
-                  <span className="text-slate-300">{p.score}</span>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-slate-400 text-sm text-center">Waiting for next question…</p>
-          </div>
+          <FeedbackView
+            isCorrect={isCorrect}
+            pointsEarned={pointsEarned}
+            slots={currentQuestionSlots}
+            slotClassName={slotClassName}
+            leaderboard={leaderboard}
+            playerId={playerId}
+          />
         )}
 
         {/* Question and answers */}
