@@ -294,7 +294,7 @@ export default function HostSession({ sessionId }) {
         {sessionState === 'waiting' && (
           <HostLobby
             joinCode={joinCode}
-            joinUrl={`${window.location.origin}/#/join?code=${joinCode}`}
+            joinUrl={`${window.location.origin}/join?code=${joinCode}`}
             players={players}
             shuffleAnswers={shuffleAnswers}
             onShuffleChange={setShuffleAnswers}
