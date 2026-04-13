@@ -80,6 +80,22 @@ Add Supabase Auth for quiz creators (email/password or magic link). Each quiz be
 - [ ] Creators can only edit and delete their own quizzes
 - [ ] Personal quiz library page showing the creator's quizzes
 
+---
+
+## Technical debt
+
+Items deferred to a later version. The version marker indicates the earliest point where it makes sense to address each one.
+
+- [ ] **v0.4** — Host loses session state on page refresh; all session data (session ID, state, question index) lives in component state only. Recovery requires adding URL-based session lookup when real-time is wired up.
+- [ ] **v0.5** — Player can re-answer a question by refreshing the page; `selectedAnswerId` is component state only. Fixed once submitted answers are persisted to the DB.
+- [ ] **v0.6** — `is_correct` is fetched for all answers and visible in the browser network tab before the player answers, making it trivial to cheat. Addressed when score calculation moves server-side (client no longer needs `is_correct` upfront).
+- [ ] **v0.8** — Replace open `allow all` RLS policies with proper user-scoped policies (currently every anonymous client can read and write everything).
+- [ ] **v0.8** — `player_id` in `localStorage` is unauthenticated; any client can forge a player identity.
+- [ ] **future** — Join code collision is unhandled; if a duplicate code is generated the insert fails with a constraint error instead of retrying with a new code.
+- [ ] **future** — Stale `waiting` sessions accumulate in the DB with no expiry or cleanup mechanism.
+
+---
+
 ## v0.9 — Results, polish, and full flow
 
 Post-session results screen for the host: final leaderboard, per-question response distribution, average response time, and % correct. Host controls are complete: pause, skip, replay question. UI is polished end-to-end. The full flow works without any hardcoded values or missing pieces.
