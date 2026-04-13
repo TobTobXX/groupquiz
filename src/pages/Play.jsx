@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SlotIcon from '../components/SlotIcon'
 import FeedbackView from '../components/FeedbackView'
@@ -8,6 +8,7 @@ import { byOrderIndex } from '../lib/utils'
 
 export default function Play() {
   const { code } = useParams()
+  const navigate = useNavigate()
   const [nickname, setNickname] = useState(null)
   const [sessionId, setSessionId] = useState(null)
   const [sessionState, setSessionState] = useState(null)
@@ -100,9 +101,10 @@ export default function Play() {
         return
       }
 
-      const playerId = localStorage.getItem('player_id')
+      const stored = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')
+      const playerId = stored?.player_id
       if (!playerId) {
-        setError('Player not found — did you join via the home page?')
+        navigate(`/join/${code}`, { replace: true })
         return
       }
 
@@ -113,7 +115,7 @@ export default function Play() {
         .single()
 
       if (playerError || !player) {
-        setError('Could not load player info')
+        navigate(`/join/${code}`, { replace: true })
         return
       }
 
@@ -185,6 +187,9 @@ export default function Play() {
           const newSlots = payload.new.current_question_slots ?? null
           const prevOpen = prevQuestionOpenRef.current
 
+          if (newState === 'finished') {
+            localStorage.removeItem(`player_${code}`)
+          }
           setSessionState(newState)
           setCurrentQuestionIndex(newIndex)
           setCurrentQuestionSlots(newSlots)
@@ -222,7 +227,7 @@ export default function Play() {
           if (wasActiveRef.current && prevOpen === true && newQuestionOpen === false) {
             const closedQuestion = questionsRef.current[newIndex]
             const sid = sessionIdRef.current
-            const pid = localStorage.getItem('player_id')
+            const pid = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')?.player_id
             const slots = payload.new.current_question_slots ?? null
             loadFeedback(closedQuestion, sid, pid, slots)
           }
@@ -241,7 +246,7 @@ export default function Play() {
   async function submitAnswer(slotIndex) {
     if (answerSubmitted || alreadyAnswered) return
 
-    const playerId = localStorage.getItem('player_id')
+    const playerId = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')?.player_id
     const question = questionsRef.current[currentQuestionIndex]
     const slots = currentQuestionSlotsRef.current
     if (!playerId || !question || !slots) return
@@ -312,7 +317,7 @@ export default function Play() {
     )
   }
 
-  const playerId = localStorage.getItem('player_id')
+  const playerId = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')?.player_id
   const question = sessionState === 'active' &&
     currentQuestionIndex !== null &&
     currentQuestionIndex < questions.length
