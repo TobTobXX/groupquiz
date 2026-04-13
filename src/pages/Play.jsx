@@ -22,6 +22,7 @@ export default function Play() {
   const [feedbackShown, setFeedbackShown] = useState(false)
   const [isCorrect, setIsCorrect] = useState(null)
   const [pointsEarned, setPointsEarned] = useState(0)
+  const [correctAnswerIds, setCorrectAnswerIds] = useState([])
   const [leaderboard, setLeaderboard] = useState([])
   const [error, setError] = useState(null)
 
@@ -48,6 +49,13 @@ export default function Play() {
       setAnswerSubmitted(!!pa)
       setIsCorrect(pa ? correct : null)
       setPointsEarned(correct ? (closedQuestion.points ?? 0) : 0)
+
+      const { data: correctAnswers } = await supabase
+        .from('answers')
+        .select('id')
+        .eq('question_id', closedQuestion.id)
+        .eq('is_correct', true)
+      setCorrectAnswerIds(correctAnswers ? correctAnswers.map((a) => a.id) : [])
     }
     if (sid) {
       const { data: lb } = await supabase
@@ -103,7 +111,7 @@ export default function Play() {
         wasActiveRef.current = true
         const { data: qs, error: qsError } = await supabase
           .from('questions')
-          .select('id, question_text, order_index, points, answers(id, answer_text, is_correct, order_index)')
+          .select('id, question_text, order_index, points, answers(id, answer_text, order_index)')
           .eq('quiz_id', quizId)
           .order('order_index')
 
@@ -159,13 +167,14 @@ export default function Play() {
               setFeedbackShown(false)
               setIsCorrect(null)
               setPointsEarned(0)
+              setCorrectAnswerIds([])
             }
 
             if (!wasActiveRef.current && newState === 'active') {
               wasActiveRef.current = true
               supabase
                 .from('questions')
-                .select('id, question_text, order_index, points, answers(id, answer_text, is_correct, order_index)')
+                .select('id, question_text, order_index, points, answers(id, answer_text, order_index)')
                 .eq('quiz_id', quizId)
                 .order('order_index')
                 .then(({ data, error }) => {
@@ -210,8 +219,7 @@ export default function Play() {
     setSubmittedAnswerId(answer.id)
 
     const { error } = await supabase
-      .from('player_answers')
-      .insert({ player_id: playerId, question_id: question.id, answer_id: answer.id })
+      .rpc('submit_answer', { p_player_id: playerId, p_question_id: question.id, p_answer_id: answer.id })
 
     if (error) {
       if (error.code === '23505') {
@@ -229,7 +237,7 @@ export default function Play() {
     const base = 'min-h-20 rounded-xl text-white font-semibold text-lg flex items-center justify-center text-center px-4 transition-opacity'
 
     if (feedbackShown) {
-      if (answer.is_correct) {
+      if (correctAnswerIds.includes(answer.id)) {
         return `${base} bg-emerald-600 ring-4 ring-white`
       }
       if (answer.id === submittedAnswerId) {
