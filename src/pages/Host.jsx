@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 function generateJoinCode() {
@@ -282,6 +282,12 @@ export default function Host() {
         </div>
       ) : (
         <div className="w-full max-w-sm flex flex-col gap-3">
+          <Link
+            to="/create"
+            className="w-full text-center border-2 border-dashed border-slate-600 hover:border-indigo-500 hover:bg-indigo-950 text-slate-400 hover:text-indigo-300 font-semibold py-3 rounded-xl transition-colors"
+          >
+            + Create a new quiz
+          </Link>
           {quizzes.map((quiz) => (
             <div key={quiz.id} className="bg-slate-800 rounded-xl px-5 py-4 flex items-center justify-between">
               <span className="font-medium">{quiz.title}</span>
