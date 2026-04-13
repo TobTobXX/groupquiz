@@ -119,17 +119,19 @@ export default function Host() {
           else setPublicQuizzes(data ?? [])
           setLoading(false)
         })
-      if (user) {
-        supabase
-          .from('quizzes')
-          .select('id, title, creator_id')
-          .eq('creator_id', user.id)
-          .then(({ data }) => {
-            if (data) setOwnQuizzes(data)
-          })
-      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- urlSessionId intentionally only read on mount
+
+  useEffect(() => {
+    if (urlSessionId || !user) return
+    supabase
+      .from('quizzes')
+      .select('id, title, creator_id')
+      .eq('creator_id', user.id)
+      .then(({ data }) => {
+        if (data) setOwnQuizzes(data)
+      })
+  }, [user, urlSessionId])
 
   useEffect(() => {
     if (!quizId) return

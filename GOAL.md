@@ -6,19 +6,22 @@ Primary target: classroom use. The host is typically a teacher; the quiz creator
 
 ## Roles
 
-### Quiz Creator
+Three distinct roles with different authentication requirements.
+
+### Quiz Creator (authenticated)
 
 - Create and edit quizzes with an arbitrary number of questions.
 - Each question has 2–4 answer options, with one or more marked correct.
 - Supported question types: multiple choice (2–4 options); true/false is just multiple choice locked to 2 options.
 - Set per-question time limits and point values.
 - Attach images to questions.
-- Manage a personal library of quizzes (requires account).
-- Quizzes can be marked private; private quizzes require the creator to be logged in to host.
+- Manage a personal library of quizzes.
+- Mark quizzes as public (browsable by all hosts) or private (only they can host).
 
-### Host
+### Host (may be unauthenticated)
 
-- Start a live session from any public quiz, or from their own private quizzes when logged in.
+- Start a live session from any public quiz — **no account needed**.
+- When logged in, additionally see and host their own private quizzes.
 - Share a short join code with participants — no app or account needed on their end.
 - Sessions advance linearly — questions play in order, one at a time.
 - See a live participant list and per-question response progress during the game.
@@ -26,9 +29,9 @@ Primary target: classroom use. The host is typically a teacher; the quiz creator
 - Per-question timer is configurable; a question can also have no time limit.
 - End the session early.
 
-### Player
+### Player (always unauthenticated)
 
-- Join a session with just a code and a chosen nickname — no sign-up.
+- Join a session with just a code and a chosen nickname — **no sign-up, no account**.
 - See questions and answer options clearly on any device.
 - Get immediate feedback after each answer (correct/incorrect, points earned).
 - Track their current rank on a live leaderboard between questions.
