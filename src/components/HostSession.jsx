@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import SlotIcon from './SlotIcon'
-import { SLOT_COLOR_HEX } from '../lib/slots'
+import HostWaiting from './HostWaiting'
+import HostActiveQuestion from './HostActiveQuestion'
 import { byOrderIndex } from '../lib/utils'
 
 // Shown at /host/:sessionId. Manages the live game: waiting room, active
@@ -272,94 +272,30 @@ export default function HostSession({ sessionId }) {
         </div>
 
         {sessionState === 'waiting' && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="flex items-center gap-2 text-slate-400">
-              <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span className="text-sm">{playerCount} player(s) joined</span>
-            </div>
-            <label className="flex items-center gap-2 text-slate-300 text-sm cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={shuffleAnswers}
-                onChange={(e) => setShuffleAnswers(e.target.checked)}
-                className="w-4 h-4 accent-indigo-500"
-              />
-              Shuffle answer positions
-            </label>
-            <button
-              onClick={startGame}
-              disabled={loadingSlots}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
-            >
-              {loadingSlots ? 'Starting…' : `Start game (${playerCount} players)`}
-            </button>
-          </div>
+          <HostWaiting
+            playerCount={playerCount}
+            shuffleAnswers={shuffleAnswers}
+            onShuffleChange={setShuffleAnswers}
+            loadingSlots={loadingSlots}
+            onStart={startGame}
+          />
         )}
 
         {sessionState === 'active' && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <p className="text-slate-300 text-sm">
-              Question <span className="text-white font-bold">{currentQuestionIndex + 1}</span> / {totalQuestions}
-            </p>
-
-            {hostQuestions[currentQuestionIndex] && (
-              <p className="text-2xl font-bold text-center leading-snug px-2">
-                {hostQuestions[currentQuestionIndex].question_text}
-              </p>
-            )}
-
-            {timeRemaining !== null && (
-              <div className="text-6xl font-bold text-white tabular-nums">
-                {timeRemaining}
-              </div>
-            )}
-
-            {currentQuestionSlots && (
-              <div className="w-full grid grid-cols-2 gap-3">
-                {currentQuestionSlots.map((slot) => {
-                  const answer = hostQuestions[currentQuestionIndex]?.answers?.find((a) => a.id === slot.answer_id)
-                  return (
-                    <div
-                      key={slot.slot_index}
-                      className="flex items-center gap-3 p-3 rounded-xl min-h-20"
-                      style={{ backgroundColor: SLOT_COLOR_HEX[slot.color] }}
-                    >
-                      <SlotIcon name={slot.icon} className="text-white flex-shrink-0" />
-                      <span className="text-white font-semibold text-center flex-1 leading-tight">
-                        {answer?.answer_text ?? ''}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            <p className="text-slate-400 text-sm">
-              {questionOpen
-                ? `${answerCount} / ${playerCount} answered`
-                : 'Results shown'}
-            </p>
-            <button
-              onClick={closeQuestion}
-              disabled={!questionOpen}
-              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
-            >
-              Close question
-            </button>
-            <button
-              onClick={nextQuestion}
-              disabled={currentQuestionIndex >= totalQuestions - 1 || loadingSlots}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
-            >
-              {loadingSlots ? 'Loading…' : 'Next question'}
-            </button>
-            <button
-              onClick={endGame}
-              className="w-full bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 rounded-lg transition-colors"
-            >
-              End game
-            </button>
-          </div>
+          <HostActiveQuestion
+            question={hostQuestions[currentQuestionIndex]}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={totalQuestions}
+            timeRemaining={timeRemaining}
+            questionOpen={questionOpen}
+            slots={currentQuestionSlots}
+            answerCount={answerCount}
+            playerCount={playerCount}
+            loadingSlots={loadingSlots}
+            onClose={closeQuestion}
+            onNext={nextQuestion}
+            onEnd={endGame}
+          />
         )}
 
         {sessionState === 'finished' && (
