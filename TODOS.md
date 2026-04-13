@@ -41,9 +41,9 @@ Open the app in two browser windows (host + player) and walk through the full re
 
 > **Files:** none to edit. **User action:** Run `nix shell nixpkgs#nodejs -c npm run dev` and manually test in the browser. **Watch out:** Tailwind v4 with `@tailwindcss/vite` does JIT class scanning on hot reload — no separate build step needed.
 
-- [ ] Host creates a session and sees the join code.
-- [ ] Player opens `/play/{code}` in a second tab, enters a nickname, lands on the waiting screen.
-- [ ] Host clicks "Start game" — player screen transitions to the first question without any page reload.
-- [ ] Host clicks "Next question" — player screen advances to the next question without any page reload.
-- [ ] Host clicks "End game" — player screen shows the game-over screen without any page reload.
-- [ ] Refresh the host page — it reconnects to the existing session and shows the correct current state.
+- [x] Host creates a session and sees the join code.
+- [x] Player opens `/play/{code}` in a second tab, enters a nickname, lands on the waiting screen.
+- [x] Host clicks "Start game" — player screen transitions to the first question without any page reload.
+- [x] Host clicks "Next question" — player screen advances to the next question without any page reload.
+- [x] Host clicks "End game" — player screen shows the game-over screen without any page reload.
+- [x] Refresh the host page — it reconnects to the existing session and shows the correct current state.

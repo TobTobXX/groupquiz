@@ -19,6 +19,10 @@ export default function Play() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    setSelectedAnswerId(null)
+  }, [currentQuestionIndex])
+
+  useEffect(() => {
     async function load() {
       const { data: session, error: sessionError } = await supabase
         .from('sessions')
