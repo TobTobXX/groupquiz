@@ -13,6 +13,11 @@ function generateJoinCode() {
 export default function Host() {
   const [quizzes, setQuizzes] = useState([])
   const [joinCode, setJoinCode] = useState(null)
+  const [sessionId, setSessionId] = useState(null)
+  const [quizId, setQuizId] = useState(null)
+  const [sessionState, setSessionState] = useState('waiting')
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -27,16 +32,57 @@ export default function Host() {
       })
   }, [])
 
-  async function createSession(quizId) {
+  async function createSession(selectedQuizId) {
     const code = generateJoinCode()
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('sessions')
-      .insert({ quiz_id: quizId, join_code: code, state: 'waiting' })
+      .insert({ quiz_id: selectedQuizId, join_code: code, state: 'waiting' })
+      .select('id')
+      .single()
     if (error) {
       setError(error.message)
     } else {
       setJoinCode(code)
+      setSessionId(data.id)
+      setQuizId(selectedQuizId)
     }
+  }
+
+  async function startGame() {
+    const { count, error: countError } = await supabase
+      .from('questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('quiz_id', quizId)
+    if (countError) { setError(countError.message); return }
+
+    const { error } = await supabase
+      .from('sessions')
+      .update({ state: 'active', current_question_index: 0 })
+      .eq('id', sessionId)
+    if (error) { setError(error.message); return }
+
+    setTotalQuestions(count)
+    setCurrentQuestionIndex(0)
+    setSessionState('active')
+  }
+
+  async function nextQuestion() {
+    const next = currentQuestionIndex + 1
+    const { error } = await supabase
+      .from('sessions')
+      .update({ current_question_index: next })
+      .eq('id', sessionId)
+    if (error) { setError(error.message); return }
+    setCurrentQuestionIndex(next)
+  }
+
+  async function endGame() {
+    const { error } = await supabase
+      .from('sessions')
+      .update({ state: 'finished' })
+      .eq('id', sessionId)
+    if (error) { setError(error.message); return }
+    setSessionState('finished')
   }
 
   return (
@@ -48,7 +94,23 @@ export default function Host() {
         <div>
           <p>Join code:</p>
           <strong style={{ fontSize: '2rem' }}>{joinCode}</strong>
-          <p>Waiting for players...</p>
+          {sessionState === 'waiting' && (
+            <>
+              <p>Waiting for players...</p>
+              <button onClick={startGame}>Start game</button>
+            </>
+          )}
+          {sessionState === 'active' && (
+            <>
+              <p>Question {currentQuestionIndex + 1} / {totalQuestions}</p>
+              <button onClick={nextQuestion} disabled={currentQuestionIndex >= totalQuestions - 1}>
+                Next question
+              </button>
+              {' '}
+              <button onClick={endGame}>End game</button>
+            </>
+          )}
+          {sessionState === 'finished' && <p>Game over.</p>}
         </div>
       ) : (
         <ul>

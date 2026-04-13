@@ -1,10 +1,10 @@
-# TODOs — v0.1: Session creation and join code
+# TODOs — v0.2: Load quiz from Supabase
 
 ---
 
 ## Technical debt
 
-Things intentionally left rough that must be revisited in a later version:
+Carried forward — do not work these until the version they are scheduled for:
 
 - [ ] **v0.8** — Replace open `allow all` RLS policies with proper user-scoped policies (currently every anonymous client can read and write everything)
 - [ ] **v0.8** — `player_id` in `localStorage` is unauthenticated; any client can forge a player identity
@@ -13,73 +13,46 @@ Things intentionally left rough that must be revisited in a later version:
 
 ---
 
-## 1. Project setup
+## 1. Host — session controls
 
-- [x] Initialise a Vite + React project in the repo root (`npm create vite@latest . -- --template react`)
-- [x] Install dependencies: `@supabase/supabase-js`, `react-router-dom`
-- [x] Install and configure Tailwind CSS (follow Vite guide — install, add plugin to vite.config, add directives to index.css)
-- [x] Verify dev server starts cleanly
+The host needs to start the game, step through questions, and end the session. These are direct DB mutations for now — no real-time, just button clicks.
 
-## 2. Supabase client
+- [x] When the join code is displayed, also show a "Start game" button
+- [x] "Start game": update the session row — set `state = 'active'` and `current_question_index = 0`; fetch the total question count for the quiz and store it in component state
+- [x] After starting, show the current question number and total (e.g. "Question 1 / 5") instead of the "Waiting for players…" message
+- [x] Show a "Next question" button; on click: increment `current_question_index` by 1 in the DB and in local state
+- [x] Disable "Next question" when already on the last question
+- [x] Show an "End game" button; on click: set `state = 'finished'` in the DB
 
-- [x] Read `SUPABASE_URL` and `SUPABASE_ANON_KEY` from `.env` (already present in repo root)
-- [x] Create `src/lib/supabase.js` that initialises and exports the Supabase client
+## 2. Play page — session state handling
 
-## 3. Database schema
+Expand the existing `load()` function to fetch `state` and `current_question_index` alongside the session `id`. Branch on session state:
 
-Create a single migration file `supabase/migrations/<timestamp>_initial.sql` with the following tables. No RLS yet — enable it per-table but add no policies (so access is fully open for now).
+- [ ] If `state === 'waiting'`: keep the existing "Waiting for the host to start…" screen
+- [ ] If `state === 'active'`: proceed to load and display the current question (section 3)
+- [ ] If `state === 'finished'`: show a "Game over" screen (no score yet — that comes in v0.5)
 
-- [x] `quizzes`: `id` (uuid PK default gen_random_uuid()), `title` (text not null), `created_at` (timestamptz default now())
-- [x] `questions`: `id` (uuid PK), `quiz_id` (uuid FK → quizzes), `order_index` (integer not null), `question_text` (text not null), `time_limit` (integer not null default 30), `points` (integer not null default 1000), `image_url` (text)
-- [x] `answers`: `id` (uuid PK), `question_id` (uuid FK → questions), `order_index` (integer not null), `answer_text` (text not null), `is_correct` (boolean not null default false)
-- [x] `sessions`: `id` (uuid PK), `quiz_id` (uuid FK → quizzes), `join_code` (text not null unique), `state` (text not null default 'waiting'), `current_question_index` (integer), `created_at` (timestamptz default now())
-- [x] `players`: `id` (uuid PK), `session_id` (uuid FK → sessions), `nickname` (text not null), `score` (integer not null default 0), `joined_at` (timestamptz default now())
-- [x] Apply migration via Supabase dashboard or CLI
+## 3. Play page — question and answer display
 
-## 4. Seed data
+Triggered when `state === 'active'`. Load the full question list once and display the question at `current_question_index`.
 
-Insert one quiz with at least 3 questions and 2–4 answers each (one marked correct per question). Do this via the Supabase dashboard SQL editor or a seed script.
+- [ ] Fetch all questions for the session's quiz ordered by `order_index`, with answers nested and ordered by `order_index` (single Supabase query via nested select)
+- [ ] If `current_question_index` is at or beyond the last question, show "Waiting for the game to end…"
+- [ ] Otherwise, display the question text for the question at `current_question_index`
+- [ ] Render each answer as a clickable button (2–4 per question)
+- [ ] On click: record the selected answer in component state and disable all answer buttons
+- [ ] Reveal client-side feedback: colour the selected button green if `is_correct === true`, red if not — no DB write (answer storage is v0.5)
 
-- [x] Insert 1 row into `quizzes`
-- [x] Insert 3+ rows into `questions` (with correct `order_index` values)
-- [x] Insert 2–4 rows per question into `answers` (with exactly one `is_correct = true` per question)
+## 4. Smoke test
 
-## 5. Routing and app shell
+Manually verify the full flow end-to-end:
 
-- [x] Set up `react-router-dom` in `src/main.jsx` with a `BrowserRouter`
-- [x] Create `src/App.jsx` with three routes:
-  - `/` → `<Home />`
-  - `/host` → `<Host />`
-  - `/play/:code` → `<Play />`
-
-## 6. Host page (`src/pages/Host.jsx`)
-
-- [x] On mount, fetch all quizzes from Supabase and display them as a list (just titles)
-- [x] Each quiz has a "Create session" button
-- [x] On click: generate a random 6-character uppercase alphanumeric join code
-- [x] Insert a new row into `sessions` with the quiz ID, join code, and state `'waiting'`
-- [x] After successful insert, display the join code prominently on screen
-- [x] Display a simple "Waiting for players..." message below the code
-
-## 7. Home page (`src/pages/Home.jsx`)
-
-- [x] Render a form with two fields: join code (text, max 6 chars, uppercased automatically) and nickname (text)
-- [x] On submit: query `sessions` where `join_code = <entered code>` and `state = 'waiting'`
-- [x] If no session found: show an inline error ("Session not found or already started")
-- [x] If found: insert a new row into `players` (session_id, nickname), store the returned player `id` in `localStorage` under the key `player_id`, then navigate to `/play/<code>`
-
-## 8. Play page (`src/pages/Play.jsx`)
-
-- [x] Read the `:code` param from the URL
-- [x] On mount, fetch the session from Supabase by join code to confirm it exists
-- [x] Display the player's nickname (read from `localStorage` → look up the player row)
-- [x] Display a "Waiting for the host to start..." message
-- [x] No real-time yet — this screen is static until v0.4
-
-## 9. Smoke test
-
-Manually verify the full flow works:
-- [x] Host creates a session → join code appears
-- [x] Player enters code + nickname → lands on waiting screen
-- [x] Row appears in `players` table in Supabase dashboard
-- [x] Entering a wrong code shows an error
+- [ ] Host creates a session → join code appears with "Start game" button
+- [ ] Player joins → sees "Waiting for the host to start…"
+- [ ] Host clicks "Start game" → sees "Question 1 / N" with Next/End controls
+- [ ] Player refreshes → sees question text and answer buttons
+- [ ] Player clicks an answer → buttons lock; selected button turns green or red
+- [ ] Host clicks "Next question" → counter increments on host screen
+- [ ] Player refreshes → sees next question
+- [ ] Host clicks "End game" → session state becomes `'finished'`
+- [ ] Player refreshes → sees "Game over" screen
