@@ -5,7 +5,7 @@
 This is a self-hostable real-time quiz platform — a better Kahoot. Read the planning documents before doing any work:
 
 - **[GOAL.md](GOAL.md)** — what we're building and for whom (player, host, quiz creator)
-- **[TECHNOLOGIES.md](TECHNOLOGIES.md)** — stack decisions and why (React, Supabase, no server)
+- **[TECHNOLOGIES.md](TECHNOLOGIES.md)** — stack decisions and explanation if files/directories and DB schema.
 - **[STEPS.md](STEPS.md)** — nine incremental versions (v0.1–v0.9), each with a checklist
 - **[TODOS.md](TODOS.md)** — detailed task list for the current version being worked on
 
