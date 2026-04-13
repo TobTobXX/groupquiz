@@ -1,108 +1,122 @@
-# TODOS — v0.10 Navigation overhaul ✓
+# TODOS — v0.11 Lobby redesign
 
-Coherent navigation across all pages. The home page is the reference point — all other pages get a consistent top bar and explicit exit paths. No page should leave the user stranded.
+Redesign the host lobby (waiting room) to be clear, functional, and polished. Primary goal: make it dead easy for players to join. Secondary goal: show who has joined. No tacky background images.
 
-Naming convention used throughout:
-- **HostLibrary** — the quiz picker at `/host` (like a library: browse and pick a game)
-- **HostLobby** — the waiting room at `/host/:sessionId` while players gather before the game starts
-
----
-
-## 1. Rename components to match semantics
-
-> **Relevant:** `src/components/HostLobby.jsx` → rename to `HostLibrary.jsx`, `src/components/HostWaiting.jsx` → rename to `HostLobby.jsx`. Update all import sites: `src/pages/Host.jsx`, `src/components/HostSession.jsx`.
-> **Watch out:** The rename is mechanical — no logic changes in this section. Do it first so subsequent sections use the correct filenames.
-
-- [ ] Rename `src/components/HostLobby.jsx` → `src/components/HostLibrary.jsx`. Update the component function name inside the file from `HostLobby` to `HostLibrary`.
-- [ ] Rename `src/components/HostWaiting.jsx` → `src/components/HostLobby.jsx`. Update the component function name inside the file from `HostWaiting` to `HostLobby`.
-- [ ] In `src/pages/Host.jsx`, update imports: `HostLibrary` from `../components/HostLibrary`, `HostSession` unchanged. Update JSX: render `<HostLibrary />` (was `<HostLobby />`).
-- [ ] In `src/components/HostSession.jsx`, update import: `HostLobby` from `./HostLobby` (was `HostWaiting`). Update JSX: `<HostLobby ...>` (was `<HostWaiting ...>`).
+The lobby lives in two files:
+- `src/components/HostSession.jsx` — the session shell; passes `joinCode` and `playerCount` as props to `HostLobby`
+- `src/components/HostLobby.jsx` — the actual lobby UI (currently just a player count + start button)
 
 ---
 
-## 2. Merge /library into HostLibrary
+## 1. Install a QR code library
 
-The old Library page is redundant — HostLibrary already lists own quizzes. Absorb the missing features (delete, creation date) and retire `/library`.
+The QR code must be generated client-side (no external API calls, this is a self-hosted app).
 
-> **Relevant:** `src/components/HostLibrary.jsx` (add delete + date), `src/pages/Library.jsx` (delete file), `src/App.jsx` (redirect /library → /host, remove Library import), `src/pages/Login.jsx` (post-login redirect is currently `/library`).
-> **Watch out:** HostLibrary currently calls `supabase.auth.signOut()` directly — replace with `signOut` from AuthContext for consistency. The `confirm()` dialog for delete is acceptable; reuse the same pattern as Library.
+> **Relevant:** `package.json`. The library `qrcode.react` renders a QR code as SVG or canvas from a string value. It is lightweight and has no dependencies.
+> **Watch out:** Run install via Nix (`nix shell nixpkgs#nodejs -c npm install qrcode.react`). Commit `package.json` and `package-lock.json` together.
 
-- [ ] In HostLibrary, add `signOut` from `useAuth()`.
-- [ ] In HostLibrary, add a `deleting` state and `handleDelete(quizId)` function (`confirm()` → supabase delete → filter from state).
-- [ ] In HostLibrary, add a Delete button next to each own quiz row. Also show creation date (add `created_at` to the select query).
-- [ ] In Login.jsx, change the post-login redirect (both password sign-in and magic link `emailRedirectTo`) from `/library` to `/host`.
-- [ ] In App.jsx, replace the `/library` protected route with `<Route path="/library" element={<Navigate to="/host" replace />} />` and add `Navigate` to the react-router-dom import. Remove the `Library` import.
-- [ ] Delete `src/pages/Library.jsx`.
+- [x] Install `qrcode.react` via `nix shell nixpkgs#nodejs -c npm install qrcode.react`.
+- [x] Verify it appears in `package.json` dependencies.
 
 ---
 
-## 3. HostLibrary: consistent top bar
+## 2. Expose player nicknames from HostSession to HostLobby
 
-Replace the current ad-hoc header with the same top-bar pattern as Home: left = back, right = auth.
+Currently, HostSession only tracks `playerCount` (an integer). The lobby redesign needs the list of nicknames that have joined so far.
 
-> **Relevant:** `src/components/HostLibrary.jsx`.
-> **Watch out:** The current header is inline inside the `max-w-md` content column. Pull the top bar out to full-width, then keep the content column below it.
+> **Relevant:** `src/components/HostSession.jsx` — the `players` realtime subscription (lines ~102–109) and the initial player count fetch (lines ~63–69).
+> **Watch out:** The realtime INSERT callback currently only increments a counter. It needs to also capture the `nickname` field from the inserted row (`payload.new.nickname`). The initial load currently uses `{ count: 'exact', head: true }` — change it to a full `select('id, nickname')` to seed the nickname list on mount. Keep `playerCount` in sync by deriving it from `players.length` instead of maintaining a separate counter.
 
-- [ ] Add a full-width top bar at the top of the page (outside the `max-w-md` column):
-  - Left: `← Home` button → `navigate('/')`.
-  - Right: if `!loading && user`: email (small, slate-400) + Logout button calling `signOut()`; if `!loading && !user`: Sign in button → `navigate('/login')`.
-- [ ] Remove the old inline header (`flex items-center justify-between` row with "Host" title and auth links).
-
----
-
-## 4. HostSession: navigation at each game state
-
-> **Relevant:** `src/components/HostSession.jsx`.
-> **Watch out:** `quizId` is already in state — use it directly for "Host again". The `createSession` logic currently lives in HostLibrary; duplicate it inline in HostSession (it's small). After "Host again" creates the session, navigate to `/host/${newId}`. HostSession does not currently import `useNavigate`.
-
-- [ ] Import `useNavigate` in HostSession.jsx.
-- [ ] In the lobby (waiting) state: add a top bar with `← Back to library` button → `navigate('/host')`. Keep it outside the card so it doesn't crowd the join code.
-- [ ] Replace the finished state (`<p className="text-2xl font-bold">Game over.</p>`) with a proper end screen:
-  - "Game over" heading.
-  - "Back to library" button → `navigate('/host')`.
-  - "Host again" button → generates a new join code → inserts a new session with the same `quizId` → navigates to `/host/${newSessionId}`.
-- [ ] Add a `hostAgain` async function (mirror of HostLibrary's `createSession`) that generates a code, inserts the session, and navigates.
+- [x] In `HostSession.jsx`, replace the `playerCount` state with a `players` state (array of `{ id, nickname }`).
+- [x] Change the initial player fetch from `select('id', { count: 'exact', head: true })` to `select('id, nickname').eq('session_id', data.id).order('joined_at')` and seed `players` from the result.
+- [x] Update the realtime INSERT callback to push `{ id: payload.new.id, nickname: payload.new.nickname }` onto the `players` array.
+- [x] Derive `playerCount` as `players.length` wherever it was used (start button label, HostLobby prop). Remove the standalone `playerCount` state.
+- [x] Pass `players` as a new prop to `HostLobby` (array of `{ id, nickname }`).
 
 ---
 
-## 5. Play: end-of-game navigation
+## 3. Redesign the lobby layout in HostSession
 
-> **Relevant:** `src/pages/Play.jsx` — the `sessionState === 'finished'` block.
+The current lobby is a small centered card. The new layout uses the full screen and separates join instructions (prominent, top) from the player list (secondary, bottom).
 
-- [ ] In the finished state block, add a "Back to home" button below the "Thanks for playing" text → `navigate('/')`.
+> **Relevant:** `src/components/HostSession.jsx` — the `waiting` block (lines ~279–307) wraps `HostLobby` inside a `max-w-sm` card. The join code and HostLobby are both inside this card.
+> **Watch out:** The join code display currently lives in `HostSession`, not in `HostLobby`. The redesign moves it into `HostLobby` — so `joinCode` must be passed as a prop. Also pass the full URL string (e.g. `${window.location.origin}/join/${joinCode}`) so HostLobby can render it without reconstructing it.
 
----
-
-## 6. Create/Edit: back button
-
-> **Relevant:** `src/pages/Create.jsx`.
-> **Watch out:** Create.jsx has a loading/error guard that returns early. The back button only needs to be in the main render path; optionally also in the `authError` early-return so users aren't stuck.
-
-- [ ] Add a full-width top bar at the top of the main render with a `← Back` button → `navigate('/host')`.
-- [ ] Add the same `← Back` button to the `authError` early-return block.
+- [x] Add `joinCode` and `joinUrl` as props to `HostLobby` (pass them from `HostSession`).
+- [x] In `HostSession`, when `sessionState === 'waiting'`, replace the current centered `max-w-sm` card with a full-screen layout that renders just `<HostLobby ...all props... />` (the layout structure moves into HostLobby itself).
+- [x] Keep the "← Back to library" top bar outside of `HostLobby` (it belongs to `HostSession`).
 
 ---
 
-## 7. Login: back link
+## 4. Implement the new HostLobby UI
 
-> **Relevant:** `src/pages/Login.jsx` — already imports `useNavigate`.
+Full redesign of the lobby component. Layout goal: join instructions dominate the screen; player list is below but clearly visible.
 
-- [ ] Add a `← Back to home` text button above or below the login card → `navigate('/')`.
+> **Relevant:** `src/components/HostLobby.jsx` — currently ~27 lines. This section replaces it entirely.
+> **Watch out:**
+> - The QR code value must be the full join URL (`https://…/join/CODE`), not just the code.
+> - Clicking the join code copies it to clipboard (`navigator.clipboard.writeText`). Show brief visual feedback (e.g. change text to "Copied!" for 1.5 s then revert).
+> - The clickable URL below the QR code should be an `<a>` tag with `href={joinUrl}` and `target="_blank"` so hosts can also share it directly.
+> - The player list should show up to ~20 nicknames in a wrapping flex row (pill/badge style). If there are more, show "+N more". Keep this area compact — it should not crowd the join instructions.
+> - Use `QRCodeSVG` from `qrcode.react` (the SVG variant is preferred over canvas for crisp scaling).
+
+Layout structure (top to bottom):
+1. **Join instructions block** — large, centered, takes up ~60% of the viewport height:
+   - Heading: "Join at" in muted text, then the app URL (domain only, not the full path) in bold white
+   - The 6-character join code in very large text (e.g. `text-8xl font-bold tracking-widest`), styled as clickable (cursor-pointer, hover effect). On click: copy code to clipboard + show feedback.
+   - QR code (medium size, ~160–200 px) centred below the code
+   - Clickable URL (`/join/CODE`) as a small anchor link below the QR code
+2. **Controls row** — shuffle checkbox + Start button, same as today
+3. **Player list** — "N player(s) joined" count + nickname pills in a wrapping row; muted/secondary styling
+
+- [x] Replace the entire body of `HostLobby.jsx` with the new layout described above.
+- [x] Import `QRCodeSVG` from `qrcode.react`.
+- [x] Add a `copied` state (boolean); on join code click: `navigator.clipboard.writeText(joinCode)`, set `copied = true`, reset after 1500 ms with `setTimeout`.
+- [x] Render the join code as a clickable element — show "Copied!" briefly when `copied` is true.
+- [x] Render `<QRCodeSVG value={joinUrl} size={180} />` with a white background (`bgColor="#ffffff"`) so it's scannable on a dark screen.
+- [x] Render `<a href={joinUrl} target="_blank" rel="noreferrer">` with the short URL text below the QR code.
+- [x] Render the `players` array as pills. If `players.length > 20`, show the first 20 and append a "+N more" badge.
+- [x] Keep the shuffle checkbox and Start button as today (same logic, same props).
 
 ---
 
-## 8. Lint + build verification
+## 5. Lint + build verification
 
 > **Run after all sections above are complete.**
 
-- [ ] `nix shell nixpkgs#nodejs -c npm run lint` — fix any new lint errors.
-- [ ] `nix shell nixpkgs#nodejs -c npm run build` — verify production build succeeds.
+- [x] `nix shell nixpkgs#nodejs -c npm run lint` — fix any new lint errors.
+- [x] `nix shell nixpkgs#nodejs -c npm run build` — verify production build succeeds.
 - [ ] Manual smoke test:
-  - Navigate to /host without auth → Sign in link present, ← Home works.
-  - Navigate to /host with auth → Logout/email in top bar, delete a quiz, create a quiz.
-  - Navigate to /library → redirects to /host.
-  - Start a session (lobby/waiting state) → ← Back to library present, click it.
-  - Start + finish a session → end screen shows Game over + both buttons; Host again creates a new session.
-  - Play through a game to the end → Back to home button appears.
-  - Navigate to /create → ← Back button present, click it → lands at /host.
-  - Navigate to /login → Back to home link present.
+  - Start a session → lobby screen appears with large join code, QR code, and URL link.
+  - Click the join code → "Copied!" appears briefly, then reverts; clipboard contains just the code.
+  - Click the URL link → opens `/join/CODE` in a new tab.
+  - Scan the QR code (or open the URL) → Join page loads correctly.
+  - Join with two different nicknames → pills appear in the player list.
+  - Start the game → transitions to active-question view normally.
+
+---
+
+## 6. Fix GitHub Pages SPA routing
+
+This is a client-side React SPA. Direct navigation to routes like `/login`, `/host`, `/join/CODE`, etc., will 404 on GitHub Pages because only `index.html` exists. GitHub Pages tries to serve `login.html`, `host.html`, etc., which don't exist.
+
+> **Relevant:** Vite build output (only `index.html` is generated), `vite.config.js`, and GitHub Pages configuration.
+> **Watch out:** GitHub Pages serves static files and doesn't have server-side routing. For SPAs, all non-file requests must fall back to `index.html` so React Router can handle them client-side. Fix requires either a `404.html` rewrite or Vite's `base` path configuration combined with GitHub Pages settings.
+
+Paths without static HTML files (all client-side routes):
+- `/login`
+- `/host` (and `/host/:sessionId`)
+- `/join/:code` (any join code)
+- `/play/:code` (any play code)
+- `/create`
+- `/edit/:quizId` (any quiz ID)
+- `/library` (redirects to `/host`)
+
+Fix options:
+1. Add a `404.html` that redirects to `index.html` with hash-based routing
+2. Use Vite's SPA fallback in `vite.config.js` + GitHub Pages custom 404 page
+3. Change to hash-based routing (`/#/host`, `/#/login`) — requires minimal changes but less clean URLs
+
+- [x] Choose a fix strategy and implement it (404.html fallback to index.html)
+- [x] Test that direct navigation to `/login`, `/host`, `/join/ABC`, etc., works on GitHub Pages
+- [x] Test that links within the app (React Router navigation) still work correctly
