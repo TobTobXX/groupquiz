@@ -167,7 +167,7 @@ export default function Play() {
     }
 
     loadSession()
-  }, [code])
+  }, [code, navigate])
 
   // Effect 2: subscribe to session updates via realtime.
   // Runs once sessionId is known (set by Effect 1). quizId is accessed via

@@ -1,88 +1,124 @@
-# TODOS — v0.10 Results, polish, and full flow
+# TODOS — v0.10 Robust joining + landing page redesign
 
-Post-session results for host, enhanced host controls (pause, skip, replay), player end screen, and UI polish.
-
----
-
-## 1. Database: response_time column on player_answers
-
-> **Relevant:** `supabase/migrations/..._time_based_scoring.sql` — `player_answers` table; `submit_answer` function.
-> **Watch out:** `player_answers` rows are written by `submit_answer`. The function must record `created_at - question_opened_at` as `response_time_ms`. Use `extract(epoch from (now() - v_opened_at)) * 1000`.
-
-Migration:
-- Add `response_time_ms integer` nullable to `player_answers`.
-- Update `submit_answer` to insert `response_time_ms` from the elapsed calculation.
-- No other tables needed.
+Two goals: (1) players can join via a direct URL and rejoin transparently after a disconnect, and (2) the landing page gets a proper layout with auth-aware navigation.
 
 ---
 
-## 2. Frontend: host post-session results screen
+## 1. AuthContext: expose signOut
 
-> **Relevant:** `src/pages/Host.jsx` — `sessionState === 'finished'` branch currently shows bare "Game over.".
-> **Watch out:** Requires fetching all `player_answers` + `players` + `questions` for the session. Build response distribution from `session_question_answers` mapping.
+> **Relevant:** `src/context/AuthContext.jsx` — currently exposes only `{ user, loading }`.
+> **Watch out:** `signOut` must be stable (no re-creation on re-render) — define it outside the effect or wrap in `useCallback`. The logout button in Home.jsx will call this directly.
 
-Update `Host.jsx` `finished` state to show:
-- Final leaderboard: all players ordered by score, with current player's rank highlighted.
-- Per-question breakdown table: question text (truncated), answer count, correct %, avg response time.
-- "Host new session" button → navigate to `/host`.
-
-Query plan:
-- `players` for session, ordered by score.
-- `player_answers` with `answers(is_correct)` for correctness stats.
-- `session_question_answers` for answer text mapping.
+- [x] Add `async function signOut() { await supabase.auth.signOut() }` inside `AuthProvider`.
+- [x] Add `signOut` to the `AuthContext.Provider` value object.
 
 ---
 
-## 3. Frontend: host enhanced controls
+## 2. Switch to code-scoped localStorage format
 
-> **Relevant:** `src/pages/Host.jsx` — active session controls.
-> **Watch out:** `sessions` table has no `paused` column. Implement pause as `question_open = false` + a `state = 'paused'` intermediate state, or a dedicated `is_paused boolean` column on `sessions`.
+The current `player_id` key in localStorage is a single flat value, shared across all sessions. Replace it with a per-code key so multiple sessions can coexist and rejoin state is unambiguous.
 
-Add to active session UI:
-- **Pause/Resume**: toggle question acceptance. Update `sessions` row. Players see "Paused" overlay.
-- **Previous question**: re-open a past question (only if `current_question_index > 0`). Re-fetch slots for that question. Players can re-answer.
-- **Replay question**: show the current question again (same slots, timer resets). Re-opens `question_open = true`.
+> **Relevant:** `src/pages/Home.jsx` (writes `player_id`), `src/pages/Play.jsx` (reads `player_id` in 4 places).
+> **New format:** key = `` `player_${code}` ``, value = JSON `{ player_id, nickname }`.
+> **Invariant:** the entry for a code is only ever cleared when that session reaches `finished` state — not on transient errors, not on reconnect failures. Play.jsx is the right place to do this cleanup since it watches session state via realtime.
+> **Watch out:**
+> - Play.jsx reads `localStorage.getItem('player_id')` at lines 103, 225, 244, and 315. All four must switch to the new key and parse the JSON value.
+> - At line 103 (load effect), if no stored entry is found for this code, redirect to `/join/${code}` via `useNavigate` instead of showing an error. Same for a failed DB player lookup (lines 115–117) — redirect rather than error (it may be a transient failure; don't clear the entry).
+> - In the realtime callback, when `newState === 'finished'`: call `localStorage.removeItem(`player_${code}`)` before setting session state. This is the only place entries are cleared.
+> - Home.jsx (join-by-code path) currently writes `player_id` at line 40; update to write the new format.
 
-State model options:
-- Option A: `state: 'waiting' | 'active' | 'paused' | 'finished'`. Requires migration.
-- Option B: Add `is_paused boolean default false` to `sessions`. `current_question_index` still advances linearly.
+Tasks for Play.jsx:
+- [x] Import `useNavigate` in Play.jsx.
+- [x] Replace all four `localStorage.getItem('player_id')` calls with parsed access: `JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')?.player_id`.
+- [x] In the load effect (around line 103): if no stored entry for this code, call `navigate(`/join/${code}`, { replace: true })` and return.
+- [x] In the load effect (lines 115–117): if player DB lookup fails/returns empty, call `navigate(`/join/${code}`, { replace: true })` and return (do not clear the stored entry).
+- [x] In the realtime callback, when `newState === 'finished'`: call `localStorage.removeItem(`player_${code}`)` before updating React state.
 
-Option B is simpler — prefer it unless Option A is clearly better.
-
----
-
-## 4. Frontend: player end-of-game screen
-
-> **Relevant:** `src/pages/Play.jsx` — `sessionState === 'finished'` currently shows bare "Game over".
-> **Watch out:** Players should see their final rank and score. The leaderboard data is already loaded by `loadFeedback`. The finished state should reuse the leaderboard data.
-
-Update `Play.jsx` `finished` state:
-- Fetch final leaderboard (players ordered by score).
-- Show player's rank, score, and how many players total.
-- "Play again?" prompt (no-op — player needs a new join code from host).
-- Subscribe to `state = 'finished'` realtime event to trigger the end screen.
+Tasks for Home.jsx (join-by-code):
+- [x] Replace `localStorage.setItem('player_id', player.id)` with `localStorage.setItem(`player_${code}`, JSON.stringify({ player_id: player.id, nickname }))`.
 
 ---
 
-## 5. UI polish pass
+## 3. Join page: /join/:code
 
-> **Relevant:** All pages.
-> **Watch out:** This is a catch-all for consistency issues. Focus on the most jarring ones.
+A dedicated join page reachable by URL (and later QR code). Handles both fresh joins and transparent rejoin after disconnect. Also handles the rejoin path when a stored entry exists (same logic applies here as in Home.jsx's join-by-code form).
 
-Checklist:
-- [ ] Host quiz list: ensure public/own sections don't double-render if a quiz is both public AND owned (deduplicate or merge).
-- [ ] Play: question slot icons are large; verify they scale well on mobile.
-- [ ] Host: question progress text uses `currentQuestionIndex + 1` — confirm it matches the actual question shown (accounting for replay/previous).
-- [ ] All pages: no hardcoded strings that should be dynamic.
-- [ ] Colors: ensure consistent use of slate-50 through slate-900 across all cards/buttons.
+> **Relevant:** New file `src/pages/Join.jsx`. Route added to `src/App.jsx`.
+> **Watch out:**
+> - Auto-rejoin: verify both that the player record still exists in `players` AND that the session is still active (`state in ['waiting', 'active']`). If either check fails, do NOT clear the stored entry — show the form with nickname pre-filled from the stored entry so the user can rejoin manually (which will create a new player record).
+> - Exception: if the session is `finished`, this is the one case where we clear the entry (consistent with Play.jsx) and show a "session ended" error instead of a form.
+> - If the session is not found at all (bad/expired code), show an error — do not offer a join form.
+> - On successful submit (creating a new player), update the stored entry with the new `player_id`.
+> - Show a brief loading state during the auto-rejoin check to avoid a flash of the form.
+
+- [x] Add route `<Route path="/join/:code" element={<Join />} />` in `src/App.jsx`.
+- [x] Import `Join` from `./pages/Join` in App.jsx.
+- [x] Create `src/pages/Join.jsx`:
+  - On mount: read and parse `localStorage.getItem(`player_${code}`)`.
+  - **If entry found:**
+    - Query `sessions` for the code to get `id` and `state`.
+    - If session not found: show "Session not found" error.
+    - If `state === 'finished'`: clear entry (`localStorage.removeItem`), show "Session has ended" error.
+    - Else (active/waiting): query `players` for the stored `player_id`.
+      - If player found: navigate to `/play/${code}` (replace history).
+      - If player not found: leave entry intact, pre-fill nickname from stored entry, show form.
+  - **If no entry found:**
+    - Query `sessions` for the code to check it exists and is not finished.
+    - If not found or finished: show appropriate error.
+    - Else: show empty form.
+  - Form: nickname input (pre-filled if available) + "Join" button.
+  - [x] On submit: look up session by code → insert player → store/update `player_${code}` JSON → navigate to `/play/${code}`.
 
 ---
 
-## 6. Push migration + lint + build
+## 4. Home.jsx join-by-code: attempt rejoin before creating player
 
-> **Run after each step above.**
+The join-by-code form on the landing page should apply the same rejoin logic — if the user types a code they've played before, reconnect them to their existing player record rather than creating a duplicate.
 
-- `nix shell nixpkgs#supabase-cli -c supabase db push` after DB migration.
-- `nix shell nixpkgs#nodejs -c npm run lint` after each frontend change.
-- `nix shell nixpkgs#nodejs -c npm run build` to verify production build.
-- Manual test: host → play → finish → view results → host new session.
+> **Relevant:** `src/pages/Home.jsx` — `handleSubmit`.
+> **Watch out:** The rejoin check runs after the session lookup succeeds. Only skip player creation if a valid stored entry is found AND the player record still exists in DB. If the player record is gone (or session is finished), fall through to create a new player (and update the stored entry). Don't show an error for a missing player — just create a fresh one.
+
+- [x] In `handleSubmit`, after confirming the session exists and is active:
+  - Read `localStorage.getItem(`player_${code}`)` and parse.
+  - If entry found: query `players` for the stored `player_id`.
+    - If player found: update the stored entry (keep same `player_id`, update nickname if changed) → navigate to `/play/${code}` without inserting a new player row.
+    - If player not found: fall through to insert a new player.
+  - If no entry: proceed with insert as before.
+- [x] After insert (new player path): store `player_${code}` JSON with new `player_id` and nickname (already handled in Section 2 task).
+
+---
+
+## 5. Landing page redesign (Home.jsx)
+
+> **Relevant:** `src/pages/Home.jsx`, `src/context/AuthContext.jsx`.
+> **Watch out:**
+> - Import `useAuth` to get `{ user, loading, signOut }`.
+> - While `loading` is true, render neither login nor logout/create buttons to avoid a flash.
+> - "Host" button navigates to `/host` — no auth required.
+
+- [x] Import `useAuth` and `useNavigate` in Home.jsx.
+- [x] Call `useAuth()` to get `{ user, loading, signOut }`.
+- [x] Replace the current layout with:
+  - **Top bar**: right-aligned row pinned to top of page.
+    - If `!loading && !user`: "Login" button → navigate to `/login`.
+    - If `!loading && user`: "Create" button → navigate to `/create`, then "Logout" button → calls `signOut()`.
+  - **Center content**: app title, "Host" button → navigate to `/host`.
+  - **Join section** below center: "Join via code" heading + the existing join form (code + nickname inputs + Join button).
+- [x] Remove the `bg-slate-800` card wrapper — let the join form sit inline.
+
+---
+
+## 6. Lint + build verification
+
+> **Run after all sections above are complete.**
+
+- [ ] `nix shell nixpkgs#nodejs -c npm run lint` — fix any new lint errors.
+- [ ] `nix shell nixpkgs#nodejs -c npm run build` — verify production build succeeds.
+- [ ] Manual smoke test:
+  - Open `/join/ABCDEF` (known good code) with a stored entry → confirm auto-rejoin.
+  - Open `/join/ABCDEF` with no stored entry → enter nickname → confirm navigation to play page.
+  - Reload `/play/ABCDEF` mid-game → confirm transparent rejoin (no re-entry of nickname).
+  - Game ends → confirm `player_${code}` entry is cleared from localStorage.
+  - Open `/join/ABCDEF` after session finishes → confirm "session ended" error.
+  - Test landing page with and without auth: correct buttons shown.
+  - Join via code on home page with a previously-used code → confirm rejoin (no duplicate player row).
