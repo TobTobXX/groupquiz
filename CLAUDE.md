@@ -99,6 +99,10 @@ git commit -m "short description"
 git commit -am "short description"
 ```
 
+### Git tags
+
+Tag each version. The moment you should tag is when you check off all the boxes in STEPS.md.
+
 ## Environment
 
 - Supabase credentials are in `.env` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Never hardcode these.
