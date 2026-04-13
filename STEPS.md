@@ -8,12 +8,12 @@ Nine incremental milestones, each leaving the app in a working (if limited) stat
 
 Get the core flow working end-to-end with a hardcoded quiz and zero styling. A host can create a session and get a join code. A player can enter that code and land on a waiting screen. No real-time yet; pages must be refreshed manually to see updates.
 
-- [ ] Supabase project configured and JS client connected
-- [ ] Schema defined for quizzes, questions, and sessions
-- [ ] One quiz seeded manually via Supabase dashboard
-- [ ] Host page lets the host create a session and see the join code
-- [ ] Short join code is generated and stored
-- [ ] Player can enter a code and land on a waiting screen
+- [x] Supabase project configured and JS client connected
+- [x] Schema defined for quizzes, questions, and sessions
+- [x] One quiz seeded manually via Supabase dashboard
+- [x] Host page lets the host create a session and see the join code
+- [x] Short join code is generated and stored
+- [x] Player can enter a code and land on a waiting screen
 
 ## v0.2 — Load quiz from Supabase
 

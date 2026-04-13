@@ -14,6 +14,7 @@ export default function Host() {
   const [quizzes, setQuizzes] = useState([])
   const [joinCode, setJoinCode] = useState(null)
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     supabase
@@ -22,6 +23,7 @@ export default function Host() {
       .then(({ data, error }) => {
         if (error) setError(error.message)
         else setQuizzes(data)
+        setLoading(false)
       })
   }, [])
 
@@ -40,6 +42,7 @@ export default function Host() {
   return (
     <div>
       <h1>Host</h1>
+      {loading && <p>Loading quizzes...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {joinCode ? (
         <div>

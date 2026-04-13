@@ -68,7 +68,7 @@ Insert one quiz with at least 3 questions and 2–4 answers each (one marked cor
 ## 9. Smoke test
 
 Manually verify the full flow works:
-- [ ] Host creates a session → join code appears
-- [ ] Player enters code + nickname → lands on waiting screen
-- [ ] Row appears in `players` table in Supabase dashboard
-- [ ] Entering a wrong code shows an error
+- [x] Host creates a session → join code appears
+- [x] Player enters code + nickname → lands on waiting screen
+- [x] Row appears in `players` table in Supabase dashboard
+- [x] Entering a wrong code shows an error
