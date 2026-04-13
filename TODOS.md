@@ -1,124 +1,96 @@
-# TODOS — v0.10 Robust joining + landing page redesign
+# TODOS — v0.10 Navigation overhaul
 
-Two goals: (1) players can join via a direct URL and rejoin transparently after a disconnect, and (2) the landing page gets a proper layout with auth-aware navigation.
-
----
-
-## 1. AuthContext: expose signOut
-
-> **Relevant:** `src/context/AuthContext.jsx` — currently exposes only `{ user, loading }`.
-> **Watch out:** `signOut` must be stable (no re-creation on re-render) — define it outside the effect or wrap in `useCallback`. The logout button in Home.jsx will call this directly.
-
-- [x] Add `async function signOut() { await supabase.auth.signOut() }` inside `AuthProvider`.
-- [x] Add `signOut` to the `AuthContext.Provider` value object.
+Coherent navigation across all pages. The home page is the reference point — all other pages get a consistent top bar and explicit exit paths. No page should leave the user stranded.
 
 ---
 
-## 2. Switch to code-scoped localStorage format
+## 1. Merge /library into HostLobby
 
-The current `player_id` key in localStorage is a single flat value, shared across all sessions. Replace it with a per-code key so multiple sessions can coexist and rejoin state is unambiguous.
+Library is redundant — HostLobby already lists own quizzes. Absorb the missing features (delete, creation date) and retire /library.
 
-> **Relevant:** `src/pages/Home.jsx` (writes `player_id`), `src/pages/Play.jsx` (reads `player_id` in 4 places).
-> **New format:** key = `` `player_${code}` ``, value = JSON `{ player_id, nickname }`.
-> **Invariant:** the entry for a code is only ever cleared when that session reaches `finished` state — not on transient errors, not on reconnect failures. Play.jsx is the right place to do this cleanup since it watches session state via realtime.
-> **Watch out:**
-> - Play.jsx reads `localStorage.getItem('player_id')` at lines 103, 225, 244, and 315. All four must switch to the new key and parse the JSON value.
-> - At line 103 (load effect), if no stored entry is found for this code, redirect to `/join/${code}` via `useNavigate` instead of showing an error. Same for a failed DB player lookup (lines 115–117) — redirect rather than error (it may be a transient failure; don't clear the entry).
-> - In the realtime callback, when `newState === 'finished'`: call `localStorage.removeItem(`player_${code}`)` before setting session state. This is the only place entries are cleared.
-> - Home.jsx (join-by-code path) currently writes `player_id` at line 40; update to write the new format.
+> **Relevant:** `src/components/HostLobby.jsx` (add delete + date), `src/pages/Library.jsx` (delete file), `src/App.jsx` (redirect /library → /host, remove Library import), `src/pages/Login.jsx` (post-login redirect is currently `/library`).
+> **Watch out:** HostLobby currently calls `supabase.auth.signOut()` directly — replace with `signOut` from AuthContext for consistency. The `confirm()` dialog for delete in Library is acceptable; reuse the same pattern.
 
-Tasks for Play.jsx:
-- [x] Import `useNavigate` in Play.jsx.
-- [x] Replace all four `localStorage.getItem('player_id')` calls with parsed access: `JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')?.player_id`.
-- [x] In the load effect (around line 103): if no stored entry for this code, call `navigate(`/join/${code}`, { replace: true })` and return.
-- [x] In the load effect (lines 115–117): if player DB lookup fails/returns empty, call `navigate(`/join/${code}`, { replace: true })` and return (do not clear the stored entry).
-- [x] In the realtime callback, when `newState === 'finished'`: call `localStorage.removeItem(`player_${code}`)` before updating React state.
-
-Tasks for Home.jsx (join-by-code):
-- [x] Replace `localStorage.setItem('player_id', player.id)` with `localStorage.setItem(`player_${code}`, JSON.stringify({ player_id: player.id, nickname }))`.
+- [ ] In HostLobby, add `signOut` from `useAuth()`.
+- [ ] In HostLobby, add a `deleting` state and `handleDelete(quizId)` function (same logic as Library: `confirm()` → supabase delete → filter from state).
+- [ ] In HostLobby, add a Delete button next to each own quiz row. Also show creation date (add `created_at` to the select query).
+- [ ] In Login.jsx, change the post-login redirect (both password and magic link) from `/library` to `/host`.
+- [ ] In App.jsx, replace the `/library` protected route with `<Route path="/library" element={<Navigate to="/host" replace />} />` and add `Navigate` to the react-router-dom import. Remove the `Library` import.
+- [ ] Delete `src/pages/Library.jsx`.
 
 ---
 
-## 3. Join page: /join/:code
+## 2. HostLobby: consistent top bar
 
-A dedicated join page reachable by URL (and later QR code). Handles both fresh joins and transparent rejoin after disconnect. Also handles the rejoin path when a stored entry exists (same logic applies here as in Home.jsx's join-by-code form).
+Replace the current ad-hoc header with the same top-bar pattern as Home: left = back, right = auth.
 
-> **Relevant:** New file `src/pages/Join.jsx`. Route added to `src/App.jsx`.
-> **Watch out:**
-> - Auto-rejoin: verify both that the player record still exists in `players` AND that the session is still active (`state in ['waiting', 'active']`). If either check fails, do NOT clear the stored entry — show the form with nickname pre-filled from the stored entry so the user can rejoin manually (which will create a new player record).
-> - Exception: if the session is `finished`, this is the one case where we clear the entry (consistent with Play.jsx) and show a "session ended" error instead of a form.
-> - If the session is not found at all (bad/expired code), show an error — do not offer a join form.
-> - On successful submit (creating a new player), update the stored entry with the new `player_id`.
-> - Show a brief loading state during the auto-rejoin check to avoid a flash of the form.
+> **Relevant:** `src/components/HostLobby.jsx`.
+> **Watch out:** The current header is inline inside the content column. Pull it to a full-width top bar, then keep the content column below it.
 
-- [x] Add route `<Route path="/join/:code" element={<Join />} />` in `src/App.jsx`.
-- [x] Import `Join` from `./pages/Join` in App.jsx.
-- [x] Create `src/pages/Join.jsx`:
-  - On mount: read and parse `localStorage.getItem(`player_${code}`)`.
-  - **If entry found:**
-    - Query `sessions` for the code to get `id` and `state`.
-    - If session not found: show "Session not found" error.
-    - If `state === 'finished'`: clear entry (`localStorage.removeItem`), show "Session has ended" error.
-    - Else (active/waiting): query `players` for the stored `player_id`.
-      - If player found: navigate to `/play/${code}` (replace history).
-      - If player not found: leave entry intact, pre-fill nickname from stored entry, show form.
-  - **If no entry found:**
-    - Query `sessions` for the code to check it exists and is not finished.
-    - If not found or finished: show appropriate error.
-    - Else: show empty form.
-  - Form: nickname input (pre-filled if available) + "Join" button.
-  - [x] On submit: look up session by code → insert player → store/update `player_${code}` JSON → navigate to `/play/${code}`.
+- [ ] Add a full-width top bar at the top of the page (outside the `max-w-md` column):
+  - Left: `← Home` button → `navigate('/')`.
+  - Right: if `!loading && user`: email (small, slate-400) + Logout button; if `!loading && !user`: Sign in button → `navigate('/login')`.
+- [ ] Remove the old inline header (`flex items-center justify-between` row with "Host" title and auth links).
+- [ ] Replace `supabase.auth.signOut()` call with `signOut()` from `useAuth()`.
 
 ---
 
-## 4. Home.jsx join-by-code: attempt rejoin before creating player
+## 3. HostSession: navigation at each game state
 
-The join-by-code form on the landing page should apply the same rejoin logic — if the user types a code they've played before, reconnect them to their existing player record rather than creating a duplicate.
+> **Relevant:** `src/components/HostSession.jsx`.
+> **Watch out:** `quizId` is already in state — use it directly for "Host again". The `createSession` logic currently lives in HostLobby; duplicate it inline in HostSession (it's small). After "Host again" creates the session, navigate to `/host/${newId}` — but the component is already at `/host/:sessionId`, so `useNavigate` is needed. HostSession currently does not import `useNavigate`.
 
-> **Relevant:** `src/pages/Home.jsx` — `handleSubmit`.
-> **Watch out:** The rejoin check runs after the session lookup succeeds. Only skip player creation if a valid stored entry is found AND the player record still exists in DB. If the player record is gone (or session is finished), fall through to create a new player (and update the stored entry). Don't show an error for a missing player — just create a fresh one.
-
-- [x] In `handleSubmit`, after confirming the session exists and is active:
-  - Read `localStorage.getItem(`player_${code}`)` and parse.
-  - If entry found: query `players` for the stored `player_id`.
-    - If player found: update the stored entry (keep same `player_id`, update nickname if changed) → navigate to `/play/${code}` without inserting a new player row.
-    - If player not found: fall through to insert a new player.
-  - If no entry: proceed with insert as before.
-- [x] After insert (new player path): store `player_${code}` JSON with new `player_id` and nickname (already handled in Section 2 task).
+- [ ] Import `useNavigate` in HostSession.jsx.
+- [ ] In waiting state: add a top bar with `← Back to quiz list` button → `navigate('/host')`. Keep it outside the card so it doesn't crowd the join code.
+- [ ] Replace the finished state (`<p className="text-2xl font-bold">Game over.</p>`) with a proper end screen:
+  - "Game over" heading.
+  - "Back to quiz list" button → `navigate('/host')`.
+  - "Host again" button → generates a new join code → inserts a new session with the same `quizId` → navigates to `/host/${newSessionId}`.
+- [ ] Add a `hostAgain` async function (mirror of HostLobby's `createSession`) that generates a code, inserts the session, and navigates.
 
 ---
 
-## 5. Landing page redesign (Home.jsx)
+## 4. Play: end-of-game navigation
 
-> **Relevant:** `src/pages/Home.jsx`, `src/context/AuthContext.jsx`.
-> **Watch out:**
-> - Import `useAuth` to get `{ user, loading, signOut }`.
-> - While `loading` is true, render neither login nor logout/create buttons to avoid a flash.
-> - "Host" button navigates to `/host` — no auth required.
+> **Relevant:** `src/pages/Play.jsx` — the `sessionState === 'finished'` block (around line 344).
 
-- [x] Import `useAuth` and `useNavigate` in Home.jsx.
-- [x] Call `useAuth()` to get `{ user, loading, signOut }`.
-- [x] Replace the current layout with:
-  - **Top bar**: right-aligned row pinned to top of page.
-    - If `!loading && !user`: "Login" button → navigate to `/login`.
-    - If `!loading && user`: "Create" button → navigate to `/create`, then "Logout" button → calls `signOut()`.
-  - **Center content**: app title, "Host" button → navigate to `/host`.
-  - **Join section** below center: "Join via code" heading + the existing join form (code + nickname inputs + Join button).
-- [x] Remove the `bg-slate-800` card wrapper — let the join form sit inline.
+- [ ] In the finished state block, add a "Back to home" button below the "Thanks for playing" text → `navigate('/')`.
 
 ---
 
-## 6. Lint + build verification
+## 5. Create/Edit: back button
+
+> **Relevant:** `src/pages/Create.jsx` — check where the top of the return JSX is (look for the outermost `div`).
+> **Watch out:** Create.jsx has a loading/error guard at the top (returns early). The back button only needs to be in the main render path (and optionally the error path).
+
+- [ ] Add a full-width top bar at the top of the main render:
+  - Left: `← Back` button → `navigate('/host')`.
+  - Right: nothing (auth not relevant here; user is already authenticated).
+- [ ] Optionally add the same back button to the `authError` early-return block so users aren't stuck.
+
+---
+
+## 6. Login: back link
+
+> **Relevant:** `src/pages/Login.jsx`.
+> **Watch out:** Login has no `useNavigate` yet — it does actually already import it. Just add a back link below or above the card.
+
+- [ ] Add a `← Back to home` text link (or button) above or below the login card → `navigate('/')`.
+
+---
+
+## 7. Lint + build verification
 
 > **Run after all sections above are complete.**
 
 - [ ] `nix shell nixpkgs#nodejs -c npm run lint` — fix any new lint errors.
 - [ ] `nix shell nixpkgs#nodejs -c npm run build` — verify production build succeeds.
 - [ ] Manual smoke test:
-  - Open `/join/ABCDEF` (known good code) with a stored entry → confirm auto-rejoin.
-  - Open `/join/ABCDEF` with no stored entry → enter nickname → confirm navigation to play page.
-  - Reload `/play/ABCDEF` mid-game → confirm transparent rejoin (no re-entry of nickname).
-  - Game ends → confirm `player_${code}` entry is cleared from localStorage.
-  - Open `/join/ABCDEF` after session finishes → confirm "session ended" error.
-  - Test landing page with and without auth: correct buttons shown.
-  - Join via code on home page with a previously-used code → confirm rejoin (no duplicate player row).
+  - Navigate to /host without auth → Sign in link present, ← Home works.
+  - Navigate to /host with auth → Logout/email in top bar, delete a quiz, create a quiz.
+  - Navigate to /library → redirects to /host.
+  - Start a session (waiting state) → ← Back to quiz list present, click it.
+  - Start + finish a session → end screen shows Game over + both buttons; Host again creates a new session.
+  - Play through a game to the end → Back to home button appears.
+  - Navigate to /create → ← Back button present, click it → lands at /host.
+  - Navigate to /login → Back to home link present.
