@@ -55,9 +55,9 @@ Players can submit an answer during a question. Answers are stored in the databa
 
 Move score calculation into a Postgres function invoked on answer submission. The client no longer computes or writes scores directly — it only submits the chosen answer. This makes scores tamper-proof without requiring a server.
 
-- [ ] Postgres function calculates and writes scores on answer submission
-- [ ] Client only sends the chosen answer, not a score
-- [ ] RLS prevents clients from writing scores directly
+- [x] Postgres function calculates and writes scores on answer submission
+- [x] Client only sends the chosen answer, not a score
+- [x] RLS prevents clients from writing scores directly
 
 ## v0.7 — Quiz creator UI
 
@@ -86,10 +86,11 @@ Add Supabase Auth for quiz creators (email/password or magic link). Each quiz be
 
 Items deferred to a later version. The version marker indicates the earliest point where it makes sense to address each one.
 
-- [x] **v0.6** — `is_correct` is fetched for all answers and visible in the browser network tab before the player answers, making it trivial to cheat. Addressed when score calculation moves server-side (client no longer needs `is_correct` upfront).
 - [ ] **v0.8** — `submit_answer` RPC accepts any `p_player_id`; a client can call it with another player's UUID to submit answers or inflate their score. Addressed when auth is added and the function can assert `auth.uid() = p_player_id`.
 - [ ] **v0.8** — Replace open `allow all` RLS policies with proper user-scoped policies (currently every anonymous client can read and write everything).
 - [ ] **v0.8** — `player_id` in `localStorage` is unauthenticated; any client can forge a player identity.
+- [ ] **future** — Full security audit: clients can query questions/answers for future questions before they are shown (no row-level restriction by session state), and other unenumerated cheat vectors introduced by the all-anon-read RLS posture.
+- [ ] **future** — Time-based scoring: award more points for fast answers (Kahoot-style decay). Requires recording answer timestamp server-side in `submit_answer` and comparing against question open time.
 - [ ] **future** — Join code collision is unhandled; if a duplicate code is generated the insert fails with a constraint error instead of retrying with a new code.
 - [ ] **future** — Stale `waiting` sessions accumulate in the DB with no expiry or cleanup mechanism.
 

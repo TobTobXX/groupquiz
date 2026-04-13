@@ -51,10 +51,10 @@ Run the full flow and verify scores actually accumulate in the DB (they were not
 
 > **User action required:** `nix shell nixpkgs#nodejs -c npm run dev`. Open DevTools Network tab to verify `is_correct` does not appear in the questions response. After answering correctly, check the leaderboard reflects the updated score. **Context:** In v0.5 the leaderboard always showed 0 for all players because scores were never written to the DB — this is the first version where the leaderboard shows real accumulated scores.
 
-- [ ] Open DevTools Network tab — confirm the questions fetch response does NOT include `is_correct` in answer objects
-- [ ] Player answers correctly → leaderboard shows non-zero score matching the question's point value
-- [ ] Player answers incorrectly → leaderboard shows 0 (or unchanged score from previous questions)
-- [ ] A second answer attempt (double-click or refresh) still shows "You already answered this question"
-- [ ] Multiple questions: scores accumulate correctly across questions
-- [ ] Host ends game → game over screen shown as before
-- [ ] **RLS negative test:** In the browser DevTools console, run `await supabase.from('players').update({ score: 9999 }).eq('id', localStorage.getItem('player_id'))` and confirm it returns a permissions error (not a silent success)
+- [x] Open DevTools Network tab — confirm the questions fetch response does NOT include `is_correct` in answer objects
+- [x] Player answers correctly → leaderboard shows non-zero score matching the question's point value
+- [x] Player answers incorrectly → leaderboard shows 0 (or unchanged score from previous questions)
+- [x] A second answer attempt (double-click or refresh) still shows "You already answered this question"
+- [x] Multiple questions: scores accumulate correctly across questions
+- [x] Host ends game → game over screen shown as before
+- [x] **RLS negative test:** In the browser DevTools console, run `await supabase.from('players').update({ score: 9999 }).eq('id', localStorage.getItem('player_id'))` and confirm it returns a permissions error (not a silent success)
