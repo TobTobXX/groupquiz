@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import HostLobby from './HostLobby'
 import HostActiveQuestion from './HostActiveQuestion'
@@ -7,6 +8,7 @@ import { byOrderIndex } from '../lib/utils'
 // Shown at /host/:sessionId. Manages the live game: waiting room, active
 // question display, and the finished state.
 export default function HostSession({ sessionId }) {
+  const navigate = useNavigate()
   const [joinCode, setJoinCode] = useState(null)
   const [quizId, setQuizId] = useState(null)
   const [sessionState, setSessionState] = useState('waiting')
@@ -252,6 +254,18 @@ export default function HostSession({ sessionId }) {
     if (error) setError(error.message)
   }
 
+  async function hostAgain() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    const code = [...Array(6)].map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
+    const { data, error: err } = await supabase
+      .from('sessions')
+      .insert({ quiz_id: quizId, join_code: code, state: 'waiting' })
+      .select('id')
+      .single()
+    if (err) { setError(err.message); return }
+    navigate(`/host/${data.id}`)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -261,17 +275,28 @@ export default function HostSession({ sessionId }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <h1 className="text-3xl font-bold mb-8">Host</h1>
-      {error && <p className="text-red-400 mb-4">{error}</p>}
-
-      <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col items-center gap-6">
-        <div className="text-center">
-          <p className="text-sm text-slate-400 mb-1">Join code</p>
-          <p className="text-6xl font-bold tracking-widest">{joinCode}</p>
-        </div>
-
+    <div className="min-h-screen flex flex-col">
+      <div className="flex justify-start px-6 py-4">
         {sessionState === 'waiting' && (
+          <button
+            onClick={() => navigate('/host')}
+            className="text-sm text-slate-400 hover:text-white transition-colors"
+          >
+            &larr; Back to library
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        {error && <p className="text-red-400 mb-4">{error}</p>}
+
+        <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col items-center gap-6">
+          <div className="text-center">
+            <p className="text-sm text-slate-400 mb-1">Join code</p>
+            <p className="text-6xl font-bold tracking-widest">{joinCode}</p>
+          </div>
+
+          {sessionState === 'waiting' && (
           <HostLobby
             playerCount={playerCount}
             shuffleAnswers={shuffleAnswers}
@@ -299,8 +324,23 @@ export default function HostSession({ sessionId }) {
         )}
 
         {sessionState === 'finished' && (
-          <p className="text-2xl font-bold">Game over.</p>
+          <div className="flex flex-col items-center gap-4 text-center">
+            <p className="text-2xl font-bold">Game over</p>
+            <button
+              onClick={() => navigate('/host')}
+              className="text-slate-300 hover:text-white text-sm transition-colors"
+            >
+              Back to library
+            </button>
+            <button
+              onClick={hostAgain}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg transition-colors"
+            >
+              Host again
+            </button>
+          </div>
         )}
+        </div>
       </div>
     </div>
   )
