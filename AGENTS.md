@@ -101,15 +101,38 @@ The shell working directory is the project root, so plain `git` commands work wi
 ```bash
 # Stage specific files, then commit
 git add src/pages/Host.jsx supabase/migrations/xyz.sql
-git commit -m "short description"
+git commit -m "short description\n\nAssisted-by: Claude Code:claude-sonnet-4-6"
 
 # For changes to already-tracked files only (no new files), shorthand:
-git commit -am "short description"
+git commit -am "short description\n\nAssisted-by: Claude Code:claude-sonnet-4-6"
+
+# With AI attribution (use a heredoc to keep the trailer on its own line)
+# More detailed commits
+git commit -m "$(cat <<'EOF'
+Implement quiz editor
+
+This commit implements the quiz editor, but doesn't do authentication.
+In the quiz editor you can do:
+ - This
+ - That
+...
+
+Assisted-by: Claude:claude-sonnet-4-6
+EOF
+)"
 ```
 
 ### Git tags
 
-Tag each version. The moment you should tag is when you check off all the boxes in STEPS.md.
+Tag each version when all boxes in STEPS.md are checked. Always pass `-m` — omitting it opens an interactive editor:
+
+```bash
+git tag v0.9 -m "v0.9"
+```
+
+### AI attribution
+
+When AI tools contribute to a commit, include an `Assisted-by: AGENT_NAME:MODEL_VERSION` trailer in the commit message body, where `AGENT_NAME` is the tool name and `MODEL_VERSION` is the specific model used.
 
 ## Environment
 
@@ -125,10 +148,6 @@ Tag each version. The moment you should tag is when you check off all the boxes 
 - Do not add features beyond what the current version's TODOS.md specifies.
 
 ## Lessons learned
-
-### `git tag` opens interactive editor
-
-`git tag <name>` without `-m` opens the default editor. Always use `git tag <name> -m "message"` to avoid this.
 
 ### Supabase realtime
 
