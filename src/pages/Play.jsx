@@ -201,7 +201,6 @@ export default function Play() {
             prevQuestionOpenRef.current = newQuestionOpen
 
             if (newIndex !== prevQuestionIndexRef.current) {
-              console.log('[REALTIME] index changed:', prevQuestionIndexRef.current, '->', newIndex, 'questions.length:', questionsRef.current.length)
               prevQuestionIndexRef.current = newIndex
               setSubmittedAnswerId(null)
               setAnswerSubmitted(false)
@@ -228,12 +227,10 @@ export default function Play() {
                   }))
                   setQuestions(sorted)
                   questionsRef.current = sorted
-                  console.log('[REALTIME] questions loaded:', sorted.length)
                 })
             }
 
             if (wasActiveRef.current && prevOpen === true && newQuestionOpen === false) {
-              console.log('[REALTIME] open->closed, newIndex:', newIndex, 'questions.length:', questionsRef.current.length)
               const closedQuestion = questionsRef.current[newIndex]
               const sid = sessionIdRef.current
               const pid = localStorage.getItem('player_id')
