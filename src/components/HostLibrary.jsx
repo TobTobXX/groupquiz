@@ -72,28 +72,37 @@ export default function HostLibrary() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Host</h1>
-          {user ? (
+    <div className="min-h-screen flex flex-col">
+      <div className="flex justify-between items-center px-6 py-4">
+        <button
+          onClick={() => navigate('/')}
+          className="text-sm text-slate-400 hover:text-white transition-colors"
+        >
+          &larr; Home
+        </button>
+        {user ? (
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-500">{user.email}</span>
             <button
               onClick={signOut}
               className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
             >
-              Log out
+              Logout
             </button>
-          ) : (
-            <Link
-              to="/login"
-              className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              Sign in
-            </Link>
-          )}
-        </div>
+          </div>
+        ) : (
+          <Link
+            to="/login"
+            className="text-sm text-slate-300 hover:text-white transition-colors"
+          >
+            Sign in
+          </Link>
+        )}
+      </div>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-md flex flex-col gap-6">
+          {error && <p className="text-red-400 text-sm">{error}</p>}
 
         <Link
           to="/create"
@@ -159,6 +168,7 @@ export default function HostLibrary() {
         {!loading && publicQuizzes.length === 0 && ownQuizzes.length === 0 && (
           <p className="text-slate-500 text-center py-8">No quizzes available.</p>
         )}
+        </div>
       </div>
     </div>
   )
