@@ -124,6 +124,10 @@ Tag each version. The moment you should tag is when you check off all the boxes 
 
 ## Lessons learned
 
+### `git tag` opens interactive editor
+
+`git tag <name>` without `-m` opens the default editor. Always use `git tag <name> -m "message"` to avoid this.
+
 ### `nix run` vs `nix shell` for npm/node commands
 
 `nix run nixpkgs#nodejs -- <cmd>` breaks when `<cmd>` itself is a wrapper script (like `npm`, `npx`, `vite`). The `--` gets passed to the wrong binary. Always use `nix shell nixpkgs#nodejs -c <cmd>` for npm, npx, vite, and similar tools. `nix run` is fine for single-shot CLI binaries (e.g. `nix run nixpkgs#supabase-cli -- db push`).
@@ -132,18 +136,13 @@ Tag each version. The moment you should tag is when you check off all the boxes 
 
 JIT class scanning happens on Vite's hot reload, so `npm run dev` is sufficient during development. No separate build step needed for styling changes.
 
-### Supabase realtime — scope of a realtime channel filter
+### Supabase realtime
 
-Supabase realtime uses Postgres-level filters (`id=eq.xxx`). The `filter` option in `postgres_changes` must use Postgres syntax (`id=eq.${id}`), not the Supabase JS client syntax (`id=eq.xxx`).
+- **Scope of a realtime channel filter** — Supabase realtime uses Postgres-level filters (`id=eq.xxx`). The `filter` option in `postgres_changes` must use Postgres syntax (`id=eq.${id}`), not the Supabase JS client syntax.
+- **Async callbacks** — Do not use `async` on the realtime `on('UPDATE')` callback. It can cause state update ordering issues (stale closures, race conditions). Instead, fire off non-blocking DB calls with `.then()` inside the synchronous callback.
+- **Filter column naming** — The realtime filter key uses Postgres column names with underscores, not camelCase JS keys. Use `join_code=eq.${code}`, not `joinCode=eq.${code}`.
+- **Enabling realtime** — `supabase db push` only handles SQL migrations. Enabling realtime on a table requires either the Supabase dashboard or a raw SQL migration (`ALTER PUBLICATION supabase_realtime ADD TABLE <name>`). The CLI has no `realtime enable` command.
 
-### Supabase realtime — async callbacks
+### React patterns
 
-Do not use `async` on the realtime `on('UPDATE')` callback. It can cause state update ordering issues (stale closures, race conditions). Instead, fire off non-blocking DB calls with `.then()` inside the synchronous callback, or lift async work into a separate function.
-
-### Supabase realtime — filter column naming
-
-The realtime filter key uses Postgres column names with underscores, not camelCase JS keys. Use `join_code=eq.${code}`, not `joinCode=eq.${code}`.
-
-### Supabase realtime — when `db push` is not enough
-
-`supabase db push` only handles SQL migrations. Enabling realtime on a table requires either the Supabase dashboard or a raw SQL migration (`ALTER PUBLICATION supabase_realtime ADD TABLE <name>`). The CLI has no `realtime enable` command.
+- **Async functions with side effects** — Placing `return () => {...}` inside an `async` function makes the cleanup function a dead code path. Move side effects (realtime subscriptions, event listeners) into `useEffect` with proper cleanup returns.
