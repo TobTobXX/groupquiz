@@ -6,6 +6,7 @@ import Play from './pages/Play'
 import Create from './pages/Create'
 import Login from './pages/Login'
 import Library from './pages/Library'
+import Join from './pages/Join'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -21,6 +22,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/host" element={<Host />} />
       <Route path="/host/:sessionId" element={<Host />} />
+      <Route path="/join/:code" element={<Join />} />
       <Route path="/play/:code" element={<Play />} />
       <Route
         path="/create"
