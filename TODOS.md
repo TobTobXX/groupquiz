@@ -47,12 +47,12 @@ Triggered when `state === 'active'`. Load the full question list once and displa
 
 Manually verify the full flow end-to-end:
 
-- [ ] Host creates a session → join code appears with "Start game" button
-- [ ] Player joins → sees "Waiting for the host to start…"
-- [ ] Host clicks "Start game" → sees "Question 1 / N" with Next/End controls
-- [ ] Player refreshes → sees question text and answer buttons
-- [ ] Player clicks an answer → buttons lock; selected button turns green or red
-- [ ] Host clicks "Next question" → counter increments on host screen
-- [ ] Player refreshes → sees next question
-- [ ] Host clicks "End game" → session state becomes `'finished'`
-- [ ] Player refreshes → sees "Game over" screen
+- [x] Host creates a session → join code appears with "Start game" button
+- [x] Player joins → sees "Waiting for the host to start…"
+- [x] Host clicks "Start game" → sees "Question 1 / N" with Next/End controls
+- [x] Player refreshes → sees question text and answer buttons
+- [x] Player clicks an answer → buttons lock; selected button turns green or red
+- [x] Host clicks "Next question" → counter increments on host screen
+- [x] Player refreshes → sees next question
+- [x] Host clicks "End game" → session state becomes `'finished'`
+- [x] Player refreshes → sees "Game over" screen

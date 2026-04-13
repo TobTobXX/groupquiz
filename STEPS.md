@@ -19,9 +19,9 @@ Get the core flow working end-to-end with a hardcoded quiz and zero styling. A h
 
 The player view now loads the actual quiz from the database and displays questions and answers. Still minimal styling, but real data flows through the full session.
 
-- [ ] Player screen loads and displays questions from the database
-- [ ] Answers are shown and selectable
-- [ ] Correct/wrong feedback is shown after selection (client-side for now)
+- [x] Player screen loads and displays questions from the database
+- [x] Answers are shown and selectable
+- [x] Correct/wrong feedback is shown after selection (client-side for now)
 
 ## v0.3 — Styled player UI
 
