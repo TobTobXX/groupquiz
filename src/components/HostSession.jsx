@@ -14,7 +14,7 @@ export default function HostSession({ sessionId }) {
   const [sessionState, setSessionState] = useState('waiting')
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [totalQuestions, setTotalQuestions] = useState(0)
-  const [playerCount, setPlayerCount] = useState(0)
+  const [players, setPlayers] = useState([])
   const [questionOpen, setQuestionOpen] = useState(true)
   const [answerCount, setAnswerCount] = useState(0)
   const [currentQuestionSlots, setCurrentQuestionSlots] = useState(null)
@@ -62,10 +62,11 @@ export default function HostSession({ sessionId }) {
 
         supabase
           .from('players')
-          .select('id', { count: 'exact', head: true })
+          .select('id, nickname')
           .eq('session_id', data.id)
-          .then(({ count }) => {
-            if (count != null) setPlayerCount(count)
+          .order('joined_at')
+          .then(({ data: ps }) => {
+            if (ps) setPlayers(ps)
           })
       })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- sessionId intentionally only read on mount
@@ -104,7 +105,7 @@ export default function HostSession({ sessionId }) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `session_id=eq.${sessionId}` },
-        () => setPlayerCount((c) => c + 1)
+        (payload) => setPlayers((ps) => [...ps, { id: payload.new.id, nickname: payload.new.nickname }])
       )
       .subscribe()
 
@@ -290,15 +291,11 @@ export default function HostSession({ sessionId }) {
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         {error && <p className="text-red-400 mb-4">{error}</p>}
 
-        <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col items-center gap-6">
-          <div className="text-center">
-            <p className="text-sm text-slate-400 mb-1">Join code</p>
-            <p className="text-6xl font-bold tracking-widest">{joinCode}</p>
-          </div>
-
-          {sessionState === 'waiting' && (
+        {sessionState === 'waiting' && (
           <HostLobby
-            playerCount={playerCount}
+            joinCode={joinCode}
+            joinUrl={`${window.location.origin}/join/${joinCode}`}
+            players={players}
             shuffleAnswers={shuffleAnswers}
             onShuffleChange={setShuffleAnswers}
             loadingSlots={loadingSlots}
@@ -306,41 +303,44 @@ export default function HostSession({ sessionId }) {
           />
         )}
 
-        {sessionState === 'active' && (
-          <HostActiveQuestion
-            question={hostQuestions[currentQuestionIndex]}
-            currentQuestionIndex={currentQuestionIndex}
-            totalQuestions={totalQuestions}
-            timeRemaining={timeRemaining}
-            questionOpen={questionOpen}
-            slots={currentQuestionSlots}
-            answerCount={answerCount}
-            playerCount={playerCount}
-            loadingSlots={loadingSlots}
-            onClose={closeQuestion}
-            onNext={nextQuestion}
-            onEnd={endGame}
-          />
-        )}
+        {(sessionState === 'active' || sessionState === 'finished') && (
+          <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col items-center gap-6">
+            {sessionState === 'active' && (
+              <HostActiveQuestion
+                question={hostQuestions[currentQuestionIndex]}
+                currentQuestionIndex={currentQuestionIndex}
+                totalQuestions={totalQuestions}
+                timeRemaining={timeRemaining}
+                questionOpen={questionOpen}
+                slots={currentQuestionSlots}
+                answerCount={answerCount}
+                playerCount={players.length}
+                loadingSlots={loadingSlots}
+                onClose={closeQuestion}
+                onNext={nextQuestion}
+                onEnd={endGame}
+              />
+            )}
 
-        {sessionState === 'finished' && (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-2xl font-bold">Game over</p>
-            <button
-              onClick={() => navigate('/host')}
-              className="text-slate-300 hover:text-white text-sm transition-colors"
-            >
-              Back to library
-            </button>
-            <button
-              onClick={hostAgain}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg transition-colors"
-            >
-              Host again
-            </button>
+            {sessionState === 'finished' && (
+              <div className="flex flex-col items-center gap-4 text-center">
+                <p className="text-2xl font-bold">Game over</p>
+                <button
+                  onClick={() => navigate('/host')}
+                  className="text-slate-300 hover:text-white text-sm transition-colors"
+                >
+                  Back to library
+                </button>
+                <button
+                  onClick={hostAgain}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg transition-colors"
+                >
+                  Host again
+                </button>
+              </div>
+            )}
           </div>
         )}
-        </div>
       </div>
     </div>
   )
