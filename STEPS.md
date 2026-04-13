@@ -63,12 +63,12 @@ Move score calculation into a Postgres function invoked on answer submission. Th
 
 Build the quiz editor: create a new quiz, add/edit/delete questions, set answer options (2–4), mark correct answers, set time limits and point values, attach images. Quizzes are saved to Supabase. Still no auth — any visitor can create quizzes.
 
-- [ ] Create and name a new quiz
-- [ ] Add, edit, and delete questions
-- [ ] Set 2–4 answer options per question and mark the correct one(s)
-- [ ] Set a time limit and point value per question
-- [ ] Attach an image to a question or answer option
-- [ ] Quiz is saved to and loaded from Supabase
+- [x] Create and name a new quiz
+- [x] Add, edit, and delete questions
+- [x] Set 2–4 answer options per question and mark the correct one(s)
+- [x] Set a time limit and point value per question
+- [x] Attach an image to a question or answer option
+- [x] Quiz is saved to and loaded from Supabase
 
 ---
 
@@ -143,10 +143,12 @@ Items deferred to a later version. The version marker indicates the earliest poi
 - [ ] **v0.9** — Replace open `allow all` RLS policies with proper user-scoped policies (currently every anonymous client can read and write everything).
 - [ ] **v0.9** — `player_id` in `localStorage` is unauthenticated; any client can forge a player identity.
 - [ ] **v0.9** — `session_question_answers` is populated eagerly when a session starts — a quiz creator who edits answers mid-session may cause inconsistencies. Consider regenerating assignments when a question is reopened.
+- [ ] **v0.9** — Quiz editor has no edit mode; only creation. Editing an existing quiz requires loading DB IDs, mapping them to temp IDs, and handling delete/update semantics — work best paired with auth and the quiz library page.
+- [ ] **v0.9** — Image URLs are free-text only. For a self-hostable app, users need somewhere to host images. Supabase Storage is the natural fit but adds another infrastructure piece. Consider wiring it up alongside auth.
 - [ ] **future** — Full security audit: clients can query questions/answers for future questions before they are shown (no row-level restriction by session state), and other unenumerated cheat vectors introduced by the all-anon-read RLS posture.
-
 - [ ] **future** — Join code collision is unhandled; if a duplicate code is generated the insert fails with a constraint error instead of retrying with a new code.
 - [ ] **future** — Stale `waiting` sessions accumulate in the DB with no expiry or cleanup mechanism.
+- [ ] **future** — Quiz save (insert quiz → insert questions → insert answers) runs as three separate statements. If the answers insert fails, orphaned question rows are left. Fix with an atomic Postgres RPC that does all three inserts in one transaction.
 
 ---
 
