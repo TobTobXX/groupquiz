@@ -24,5 +24,9 @@ Items deferred to a later version. The version marker indicates the earliest poi
 
 ## Future ideas:
 
+- Music
+- Make it hostable on non-root servers (ie. don't fetch /assets/..., but assets/...)
+- Multiple correct answers
+- Question with 0 points or no right/wrong
 - Pro/paid users can upload images (supabase bucket / S3) which will be shown at the question.
 
