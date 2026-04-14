@@ -55,7 +55,7 @@ export default function HostActiveQuestion({
           <img
             src={question.image_url}
             alt=""
-            className="max-h-56 object-contain rounded-xl"
+            className="h-[25vh] w-full object-contain rounded-xl"
           />
         </div>
       )}
