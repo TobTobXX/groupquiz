@@ -182,7 +182,7 @@ export default function HostSession({ sessionId }) {
         answersChannelRef.current = null
       }
     }
-  }, [sessionId, quizId, currentQuestionIndex, sessionState]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionId, quizId, currentQuestionIndex, sessionState]) // eslint-disable-line react-hooks/exhaustive-deps -- hostQuestions omitted: effect falls back to a DB query when not yet loaded; adding it would cause spurious re-subscriptions on question load
 
   // Keep questionOpenRef in sync for use inside the timer callback
   useEffect(() => { questionOpenRef.current = questionOpen }, [questionOpen])
@@ -191,7 +191,7 @@ export default function HostSession({ sessionId }) {
   useEffect(() => {
     if (!questionOpen || sessionState !== 'active') return
     if (players.length === 0 || answerCount < players.length) return
-    if (questionOpenRef.current) closeQuestion() // eslint-disable-line react-hooks/immutability
+    if (questionOpenRef.current) closeQuestion() // eslint-disable-line react-hooks/immutability -- closeQuestion is a hoisted function declaration; available at runtime despite appearing later in the file
   }, [answerCount, questionOpen, sessionState, players]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
 
   // Fetch review data (answer distribution + optional leaderboard) when a question closes

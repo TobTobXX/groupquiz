@@ -12,20 +12,7 @@ Core quiz platform fully functional with real-time sync, server-side scoring, sp
 - Quiz creator UI: create/edit quizzes, questions, answer options, images (v0.7)
 - Split-screen security: players receive only slot assignments (color/icon), never question/answer text (v0.8)
 - Supabase Auth for quiz creators, user-scoped RLS policies, personal quiz library (v0.9)
-
-## v0.10 — Navigation overhaul
-
-Consistent navigation and exit paths across all pages. The home page is the reference point — every other page gets a full-width top bar and explicit exit. No page leaves the user stranded.
-
-- [x] Rename HostLobby (quiz picker) → HostLibrary, HostWaiting → HostLobby
-- [x] Merge /library into HostLibrary: delete button, creation date, signOut from useAuth
-- [x] HostLibrary: full-width top bar with ← Home + auth controls
-- [x] HostSession: top bar in lobby, proper end screen with both buttons, hostAgain
-- [x] Play: Back to home button in finished state
-- [x] Create/Edit: full-width top bar on main render and authError early-return
-- [x] Login: full-width ← Back to home link above the card
-- [x] Retire /library route (redirects to /host), delete Library.jsx
-- [x] Lint + build pass
+- Consistent navigation across the app (v0.10)
 
 ## v0.11 — Results, polish, and full flow
 
@@ -43,7 +30,6 @@ Items deferred to a later version. The version marker indicates the earliest poi
 
 - [ ] **v0.9** — `player_id` in `localStorage` is unauthenticated; any client can forge a player identity. Left unresolved — players are intentionally unauthenticated by design.
 - [ ] **v0.9** — `session_question_answers` is populated eagerly when a session starts — a quiz creator who edits answers mid-session may cause inconsistencies. Consider regenerating assignments when a question is reopened.
-- [ ] **future** — Take a hard look at linter ignores (`eslint-disable` comments) introduced during implementation. Evaluate whether each one is justified or whether the pattern they suppress should be fixed instead.
 - [ ] **future** — Full security audit: clients can query questions/answers for future questions before they are shown (no row-level restriction by session state), and other unenumerated cheat vectors introduced by the all-anon-read RLS posture.
 - [ ] **future** — Join code collision is unhandled; if a duplicate code is generated the insert fails with a constraint error instead of retrying with a new code.
 - [ ] **future** — Stale `waiting` sessions accumulate in the DB with no expiry or cleanup mechanism.
