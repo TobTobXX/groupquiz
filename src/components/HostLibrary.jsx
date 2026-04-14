@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { exportQuiz, importQuiz } from '../lib/quizExport'
 import Header from './Header'
 
 // Shown at /host (no active session). Lists quizzes and lets the host start a session.
@@ -13,6 +14,9 @@ export default function HostLibrary() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [exporting, setExporting] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const importInputRef = useRef(null)
 
   useEffect(() => {
     supabase
@@ -56,6 +60,42 @@ export default function HostLibrary() {
     }
   }
 
+  async function handleExport(quiz) {
+    setExporting(quiz.id)
+    try {
+      const json = await exportQuiz(supabase, quiz.id)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${quiz.title.replace(/[^a-z0-9]/gi, '_')}.quiz.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err.message)
+    }
+    setExporting(null)
+  }
+
+  async function handleImport(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImporting(true)
+    try {
+      const text = await file.text()
+      await importQuiz(supabase, user.id, text)
+      const { data } = await supabase
+        .from('quizzes')
+        .select('id, title, creator_id, created_at')
+        .eq('creator_id', user.id)
+      if (data) setOwnQuizzes(data)
+    } catch (err) {
+      setError(err.message)
+    }
+    setImporting(false)
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -64,12 +104,29 @@ export default function HostLibrary() {
         <div className="w-full max-w-md flex flex-col gap-6">
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
-        <Link
-          to="/create"
-          className="w-full text-center border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold py-3 rounded-xl transition-colors"
-        >
-          + Create a new quiz
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/create"
+            className="flex-1 text-center border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold py-3 rounded-xl transition-colors"
+          >
+            + Create a new quiz
+          </Link>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
+          <button
+            type="button"
+            onClick={() => importInputRef.current?.click()}
+            disabled={importing}
+            className="border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {importing ? 'Importing…' : 'Import'}
+          </button>
+        </div>
 
         {ownQuizzes.length > 0 && (
           <div className="flex flex-col gap-3">
@@ -89,6 +146,13 @@ export default function HostLibrary() {
                   >
                     Edit
                   </Link>
+                  <button
+                    onClick={() => handleExport(quiz)}
+                    disabled={exporting === quiz.id}
+                    className="text-sm text-gray-500 hover:text-gray-900 disabled:opacity-50 transition-colors px-2 py-1"
+                  >
+                    {exporting === quiz.id ? 'Exporting…' : 'Export'}
+                  </button>
                   <button
                     onClick={() => handleDelete(quiz.id)}
                     disabled={deleting === quiz.id}

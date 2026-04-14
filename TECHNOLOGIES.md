@@ -177,6 +177,37 @@ Each route directory at the project root contains an `index.html` that is identi
 | `20260413195739_submit_answer_gate.sql` | Adds auth-uid gate to `submit_answer` (later superseded) |
 | `20260413195740_fix_submit_answer_gate.sql` | Removes incorrect auth gate from `submit_answer` (player IDs are not auth UIDs) |
 
+## Quiz export format
+
+Quizzes are exported as `.json` files. The format is self-contained: images are embedded as base64 data URLs so no external requests are needed when importing on another instance.
+
+```json
+{
+  "version": 1,
+  "exported_at": "<ISO 8601 timestamp>",
+  "title": "Quiz Title",
+  "is_public": true,
+  "questions": [
+    {
+      "question_text": "What is 2+2?",
+      "time_limit": 30,
+      "points": 1000,
+      "image_data": "data:image/jpeg;base64,<...>",
+      "answers": [
+        { "answer_text": "4", "is_correct": true },
+        { "answer_text": "3", "is_correct": false }
+      ]
+    }
+  ]
+}
+```
+
+- Database UUIDs are stripped; new ones are assigned on import via the `save_quiz` RPC.
+- `order_index` is derived from array position on both export and import.
+- `image_data` is `null` when the question has no image. If a fetch fails during export, the field is also `null` (image silently skipped).
+- `is_public` defaults to `true` on import if absent.
+- UI: **Export** button per quiz in "My Quizzes" (HostLibrary); **Import** button next to "Create new quiz" (HostLibrary).
+
 ## Frontend: React
 
 - **React 19** — UI framework. Supabase Realtime subscriptions integrate naturally with React state via `useEffect`.
