@@ -121,54 +121,27 @@ export default function Create() {
   }
 
   async function handleCreate() {
-    const { data: quiz, error: quizError } = await supabase
-      .from('quizzes')
-      .insert({ title: title.trim(), is_public: isPublic, creator_id: user.id })
-      .select('id')
-      .single()
-
-    if (quizError || !quiz) {
-      setErrors({ submit: quizError?.message ?? 'Failed to create quiz' })
-      setSaving(false)
-      return
-    }
-
-    const questionInserts = questions.map((q, i) => ({
-      quiz_id: quiz.id,
+    const questionsPayload = questions.map((q, i) => ({
       order_index: i,
       question_text: q.question_text.trim(),
       time_limit: q.time_limit,
       points: q.points,
       image_url: q.image_url.trim() || null,
+      answers: q.answers.map((a, ai) => ({
+        order_index: ai,
+        answer_text: a.answer_text.trim(),
+        is_correct: a.is_correct,
+      })),
     }))
 
-    const { data: insertedQuestions, error: qError } = await supabase
-      .from('questions')
-      .insert(questionInserts)
-      .select('id, order_index')
-
-    if (qError || !insertedQuestions) {
-      setErrors({ submit: qError?.message ?? 'Failed to save questions' })
-      setSaving(false)
-      return
-    }
-
-    const answerInserts = []
-    insertedQuestions.forEach((iq) => {
-      const orig = questions[iq.order_index]
-      orig.answers.forEach((a, ai) => {
-        answerInserts.push({
-          question_id: iq.id,
-          order_index: ai,
-          answer_text: a.answer_text.trim(),
-          is_correct: a.is_correct,
-        })
-      })
+    const { error } = await supabase.rpc('save_quiz', {
+      p_title: title.trim(),
+      p_is_public: isPublic,
+      p_questions: questionsPayload,
     })
 
-    const { error: aError } = await supabase.from('answers').insert(answerInserts)
-    if (aError) {
-      setErrors({ submit: aError.message ?? 'Failed to save answers' })
+    if (error) {
+      setErrors({ submit: error.message ?? 'Failed to save quiz' })
       setSaving(false)
       return
     }
