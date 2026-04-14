@@ -26,7 +26,7 @@ export default function HostActiveQuestion({
         {/* Timer - left edge */}
         <div className="absolute left-20">
           {timeRemaining !== null && (
-            <div className="bg-indigo-100 rounded-2xl px-8 py-5 text-6xl font-bold text-gray-900 tabular-nums">
+            <div className="bg-indigo-200 rounded-2xl px-8 py-5 text-6xl font-bold text-gray-900 tabular-nums">
               {timeRemaining}
             </div>
           )}
@@ -43,7 +43,7 @@ export default function HostActiveQuestion({
 
         {/* Answer count - right edge, single line */}
         <div className="absolute right-20">
-          <div className="bg-indigo-100 rounded-2xl px-8 py-5 text-5xl font-bold text-gray-900 tabular-nums">
+          <div className="bg-indigo-200 rounded-2xl px-8 py-5 text-5xl font-bold text-gray-900 tabular-nums">
             {answerCount}<span className="text-3xl text-gray-400"> / {playerCount}</span>
           </div>
         </div>
