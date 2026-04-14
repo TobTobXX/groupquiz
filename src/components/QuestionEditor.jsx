@@ -1,4 +1,4 @@
-export default function QuestionEditor({ index, question, onChange, onDelete, canDelete = true }) {
+export default function QuestionEditor({ index, question, onChange, onDelete, canDelete = true, isPro = false, onImageUpload }) {
   function update(field, value) {
     onChange({ ...question, [field]: value })
   }
@@ -79,14 +79,26 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Image URL</label>
-          <input
-            type="text"
-            value={question.image_url || ''}
-            onChange={(e) => update('image_url', e.target.value)}
-            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="https://..."
-          />
+          <label className="text-xs text-gray-500">Image</label>
+          {isPro ? (
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onImageUpload(file)
+              }}
+              className="w-full text-xs text-gray-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+            />
+          ) : (
+            <input
+              type="text"
+              value={question.image_url || ''}
+              onChange={(e) => update('image_url', e.target.value)}
+              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="https://..."
+            />
+          )}
         </div>
       </div>
 

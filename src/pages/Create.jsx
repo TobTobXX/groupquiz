@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import QuestionEditor from '../components/QuestionEditor'
 import Header from '../components/Header'
 import { byOrderIndex } from '../lib/utils'
+import { processAndUploadImage } from '../lib/imageUpload'
 
 // crypto.randomUUID() gives each question a stable client-side ID before it's saved.
 // This ID is used as the React key and later as the upsert target when saving.
@@ -32,6 +33,7 @@ export default function Create() {
   const [title, setTitle] = useState('')
   const [isPublic, setIsPublic] = useState(true)
   const [questions, setQuestions] = useState([blankQuestion()])
+  const [isPro, setIsPro] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(isEditMode)
   const [authError, setAuthError] = useState(null)
@@ -94,6 +96,27 @@ export default function Create() {
           })
       })
   }, [quizId, isEditMode, user.id])
+
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('is_pro')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.is_pro) setIsPro(true)
+      })
+  }, [user.id])
+
+  async function handleImageUpload(questionIndex, file) {
+    const question = questions[questionIndex]
+    try {
+      const url = await processAndUploadImage(supabase, file, user.id, question.id)
+      updateQuestion(questionIndex, { ...question, image_url: url })
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, [`q${questionIndex}_image`]: err.message }))
+    }
+  }
 
   function updateQuestion(index, updated) {
     setQuestions((qs) => qs.map((q, i) => (i === index ? updated : q)))
@@ -309,12 +332,15 @@ export default function Create() {
                 onChange={(updated) => updateQuestion(i, updated)}
                 onDelete={() => deleteQuestion(i)}
                 canDelete={questions.length > 1}
+                isPro={isPro}
+                onImageUpload={(file) => handleImageUpload(i, file)}
               />
-              {(errors[`q${i}_text`] || errors[`q${i}_answers`] || errors[`q${i}_correct`]) && (
+              {(errors[`q${i}_text`] || errors[`q${i}_answers`] || errors[`q${i}_correct`] || errors[`q${i}_image`]) && (
                 <div className="mt-1 flex flex-col gap-0.5">
                   {errors[`q${i}_text`] && <p className="text-red-400 text-sm">{errors[`q${i}_text`]}</p>}
                   {errors[`q${i}_answers`] && <p className="text-red-400 text-sm">{errors[`q${i}_answers`]}</p>}
                   {errors[`q${i}_correct`] && <p className="text-red-400 text-sm">{errors[`q${i}_correct`]}</p>}
+                  {errors[`q${i}_image`] && <p className="text-red-400 text-sm">Image upload failed: {errors[`q${i}_image`]}</p>}
                 </div>
               )}
             </div>
