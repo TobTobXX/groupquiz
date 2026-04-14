@@ -50,22 +50,22 @@ export default function Login() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8 flex flex-col gap-6">
+        <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl p-8 flex flex-col gap-6">
           <div className="text-center">
             <h1 className="text-2xl font-bold">Welcome</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-gray-500 text-sm mt-1">
             {mode === 'signin' ? 'Sign in to your account' : 'Create an account'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-400">Email</label>
+            <label className="text-sm text-gray-500">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="you@example.com"
               required
             />
@@ -73,12 +73,12 @@ export default function Login() {
 
           {!magicLink && (
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-slate-400">Password</label>
+              <label className="text-sm text-gray-500">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="••••••••"
                 required
               />
@@ -107,7 +107,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-            className="text-center text-sm text-slate-400 hover:text-slate-300 transition-colors"
+            className="text-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
@@ -117,7 +117,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setMagicLink((v) => !v)}
-            className="text-center text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="text-center text-sm text-indigo-600 hover:text-indigo-500 transition-colors"
           >
             {magicLink ? 'Use password instead' : 'Sign in with magic link'}
           </button>

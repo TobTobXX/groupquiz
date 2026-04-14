@@ -272,7 +272,7 @@ export default function Create() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-400">Loading…</p>
+        <p className="text-gray-500">Loading…</p>
       </div>
     )
   }
@@ -289,7 +289,7 @@ export default function Create() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -297,19 +297,19 @@ export default function Create() {
           <button
             type="button"
             onClick={() => navigate(isEditMode ? '/library' : '/host')}
-            className="text-slate-400 hover:text-white transition-colors text-sm"
+            className="text-gray-500 hover:text-gray-900 transition-colors text-sm"
           >
             Cancel
           </button>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-slate-400 font-medium">Quiz title</label>
+          <label className="text-sm text-gray-500 font-medium">Quiz title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="My awesome quiz"
           />
           {errors.title && <p className="text-red-400 text-sm">{errors.title}</p>}
@@ -322,7 +322,7 @@ export default function Create() {
             onChange={(e) => setIsPublic(e.target.checked)}
             className="w-4 h-4 accent-indigo-500"
           />
-          <span className="text-slate-300 text-sm">
+          <span className="text-gray-600 text-sm">
             Make this quiz public — anyone can browse and host it
           </span>
         </label>
@@ -351,7 +351,7 @@ export default function Create() {
         <button
           type="button"
           onClick={addQuestion}
-          className="w-full border-2 border-dashed border-slate-600 hover:border-slate-400 text-slate-400 hover:text-slate-300 rounded-xl py-4 transition-colors font-medium"
+          className="w-full border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-500 hover:text-gray-700 rounded-xl py-4 transition-colors font-medium"
         >
           + Add question
         </button>

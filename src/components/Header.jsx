@@ -9,12 +9,12 @@ export default function Header() {
   return (
     <header className="flex items-center gap-4 px-6 py-4">
       {/* Left: logo + library link */}
-      <Link to="/" className="text-4xl font-bold text-white hover:text-slate-200 transition-colors">
+      <Link to="/" className="text-4xl font-bold text-gray-900 hover:text-gray-700 transition-colors">
         Kbns
       </Link>
       <Link
         to="/host"
-        className="text-sm text-slate-400 hover:text-white transition-colors"
+        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
         Library
       </Link>
@@ -26,7 +26,7 @@ export default function Header() {
       {!loading && !user && (
         <button
           onClick={() => navigate('/login')}
-          className="text-sm text-slate-300 hover:text-white transition-colors"
+          className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
           Log in
         </button>
@@ -39,10 +39,10 @@ export default function Header() {
           >
             Create
           </button>
-          <span className="text-sm text-slate-500">{user.email}</span>
+          <span className="text-sm text-gray-400">{user.email}</span>
           <button
             onClick={signOut}
-            className="text-sm text-slate-400 hover:text-white transition-colors"
+            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
             Log out
           </button>

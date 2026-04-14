@@ -99,7 +99,7 @@ export default function Join() {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-4 border-white border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-4 border-gray-700 border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -110,7 +110,7 @@ export default function Join() {
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4">
           <p className="text-red-400 text-2xl font-bold">Error</p>
-          <p className="text-slate-300">{error}</p>
+          <p className="text-gray-600">{error}</p>
           <a href="/" className="text-indigo-400 hover:underline text-sm">Back to home</a>
         </div>
       </div>
@@ -122,18 +122,18 @@ export default function Join() {
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center px-4">
       <h1 className="text-3xl font-bold mb-2 text-center">Join game</h1>
-      <p className="text-slate-400 mb-8 text-center font-mono tracking-widest">{code}</p>
-      <div className="w-full max-w-sm bg-slate-800 rounded-2xl shadow-xl p-8">
+      <p className="text-gray-500 mb-8 text-center font-mono tracking-widest">{code}</p>
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl p-8">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-400 font-medium">Nickname</label>
+            <label className="text-sm text-gray-500 font-medium">Nickname</label>
             <input
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               required
               autoFocus
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           {submitError && <p className="text-red-400 text-sm">{submitError}</p>}

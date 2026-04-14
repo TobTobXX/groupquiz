@@ -20,11 +20,11 @@ export default function HostQuestionReview({
   const totalAnswers = Object.values(answerCounts).reduce((a, b) => a + b, 0)
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-slate-900">
+    <div className="fixed inset-0 flex flex-col bg-gray-50">
       {/* Question text */}
       <div className="flex items-center justify-center px-16 py-6 min-h-48">
         {question && (
-          <h1 className="text-6xl md:text-7xl font-bold text-center text-white leading-tight">
+          <h1 className="text-6xl md:text-7xl font-bold text-center text-gray-900 leading-tight">
             {question.question_text}
           </h1>
         )}
@@ -66,14 +66,14 @@ export default function HostQuestionReview({
         {/* Top-5 leaderboard (optional) */}
         {leaderboard && leaderboard.length > 0 && (
           <div className="w-96 flex flex-col gap-3 justify-center shrink-0">
-            <p className="text-slate-400 text-lg font-semibold text-center mb-1">Top players</p>
+            <p className="text-gray-500 text-lg font-semibold text-center mb-1">Top players</p>
             {leaderboard.map((p, i) => {
-              const medal = i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-slate-500'
+              const medal = i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-amber-600' : 'text-gray-400'
               return (
-                <div key={p.id} className="flex items-center gap-3 px-5 py-4 bg-slate-800 rounded-xl">
+                <div key={p.id} className="flex items-center gap-3 px-5 py-4 bg-gray-200 rounded-xl">
                   <span className={`font-bold text-2xl w-7 text-right tabular-nums ${medal}`}>{i + 1}</span>
                   <span className="flex-1 font-semibold text-2xl truncate">{p.nickname}</span>
-                  <span className="text-slate-300 text-2xl tabular-nums">{p.score}</span>
+                  <span className="text-gray-600 text-2xl tabular-nums">{p.score}</span>
                 </div>
               )
             })}
@@ -82,13 +82,13 @@ export default function HostQuestionReview({
       </div>
 
       {/* Bottom bar */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-6 py-7 bg-slate-800/50 gap-4">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-6 py-7 bg-white/90 border-t border-gray-200 gap-4">
         {/* Join code */}
         <div>
           {joinCode && (
-            <div className="text-slate-400 text-2xl">
+            <div className="text-gray-500 text-2xl">
               <span className="mr-2">Code:</span>
-              <span className="text-white font-bold text-4xl tracking-wider">{joinCode}</span>
+              <span className="text-gray-900 font-bold text-4xl tracking-wider">{joinCode}</span>
             </div>
           )}
         </div>
@@ -112,14 +112,14 @@ export default function HostQuestionReview({
 
         {/* Question count + fullscreen + Exit - right column */}
         <div className="flex items-center justify-end gap-4">
-          <div className="text-slate-400 text-2xl whitespace-nowrap">
+          <div className="text-gray-500 text-2xl whitespace-nowrap">
             <span className="mr-2">Question:</span>
-            <span className="text-white font-bold text-5xl">{currentQuestionIndex + 1}</span>
-            <span className="text-white font-bold text-5xl"> / {totalQuestions}</span>
+            <span className="text-gray-900 font-bold text-5xl">{currentQuestionIndex + 1}</span>
+            <span className="text-gray-900 font-bold text-5xl"> / {totalQuestions}</span>
           </div>
           <button
             onClick={onToggleFullscreen}
-            className="p-2 text-slate-400 hover:text-white transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-900 transition-colors"
             title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
             {isFullscreen ? (
@@ -134,7 +134,7 @@ export default function HostQuestionReview({
           </button>
           <button
             onClick={onEnd}
-            className="bg-slate-700 hover:bg-red-700 text-white font-semibold py-5 px-8 rounded-lg transition-colors text-2xl"
+            className="bg-gray-200 hover:bg-red-600 text-gray-800 hover:text-white font-semibold py-5 px-8 rounded-lg transition-colors text-2xl"
           >
             Exit
           </button>

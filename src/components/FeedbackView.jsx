@@ -13,7 +13,7 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
           {isCorrect ? <>Correct! +{pointsEarned} points{playerStreak >= 3 && <> 🔥<span className="text-orange-400 font-bold">{playerStreak}</span></>}</> : 'Wrong'}
         </div>
       ) : (
-        <div className="rounded-xl px-6 py-4 text-center font-bold text-xl bg-slate-700">
+        <div className="rounded-xl px-6 py-4 text-center font-bold text-xl bg-gray-200 text-gray-700">
           You didn't answer
         </div>
       )}
@@ -41,11 +41,11 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
               return (
                 <div
                   key={p.id}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === playerId ? 'bg-indigo-700' : 'bg-slate-800'}`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === playerId ? 'bg-indigo-700 text-white' : 'bg-gray-200'}`}
                 >
-                  <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
+                  <span className={`font-mono w-6 text-right ${p.id === playerId ? 'text-indigo-200' : 'text-gray-400'}`}>{i + 1}</span>
                   <span className="flex-1 font-semibold">{p.nickname}</span>
-                  <span className="text-slate-300">{p.score}{(p.streak ?? 0) >= 3 && <> 🔥<span className="text-orange-400 font-bold">{p.streak}</span></>}</span>
+                  <span className={p.id === playerId ? 'text-indigo-100' : 'text-gray-700'}>{p.score}{(p.streak ?? 0) >= 3 && <> 🔥<span className="text-orange-400 font-bold">{p.streak}</span></>}</span>
                 </div>
               )
             })}
@@ -53,7 +53,7 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
         )
       })()}
 
-      <p className="text-slate-400 text-sm text-center">Waiting for next question…</p>
+      <p className="text-gray-500 text-sm text-center">Waiting for next question…</p>
     </div>
   )
 }

@@ -24,10 +24,10 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
       {/* ── Join instructions ── */}
       <div className="flex flex-col items-center gap-6 text-center">
         <div>
-          <p className="text-slate-400 text-lg mb-1">
-            Join at <span className="text-white font-semibold">{domain}</span>
+          <p className="text-gray-500 text-lg mb-1">
+            Join at <span className="text-gray-900 font-semibold">{domain}</span>
           </p>
-          <p className="text-slate-400 text-sm">or enter the code below</p>
+          <p className="text-gray-500 text-sm">or enter the code below</p>
         </div>
 
         {/* Clickable join code */}
@@ -36,10 +36,10 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
           title="Click to copy"
           className="group relative flex flex-col items-center cursor-pointer select-none"
         >
-          <span className={`text-8xl font-bold tracking-widest transition-colors ${copied ? 'text-green-400' : 'text-white group-hover:text-indigo-300'}`}>
+          <span className={`text-8xl font-bold tracking-widest transition-colors ${copied ? 'text-green-500' : 'text-gray-900 group-hover:text-indigo-500'}`}>
             {copied ? 'Copied!' : joinCode}
           </span>
-          <span className="text-xs text-slate-500 mt-1 group-hover:text-slate-400 transition-colors">
+          <span className="text-xs text-gray-400 mt-1 group-hover:text-gray-500 transition-colors">
             click to copy
           </span>
         </button>
@@ -53,7 +53,7 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             href={joinUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-sm text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors"
+            className="text-sm text-indigo-600 hover:text-indigo-500 underline underline-offset-2 transition-colors"
           >
             {joinUrl}
           </a>
@@ -62,7 +62,7 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
 
       {/* ── Controls ── */}
       <div className="flex flex-col items-center gap-3 w-full max-w-xs">
-        <label className="flex items-center gap-2 text-slate-300 text-sm cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer select-none">
           <input
             type="checkbox"
             checked={shuffleAnswers}
@@ -71,7 +71,7 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
           />
           Shuffle answer positions
         </label>
-        <label className="flex items-center gap-2 text-slate-300 text-sm cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer select-none">
           <input
             type="checkbox"
             checked={showLeaderboard}
@@ -91,8 +91,8 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
 
       {/* ── Player list ── */}
       <div className="flex flex-col items-center gap-3 w-full max-w-2xl">
-        <div className="flex items-center gap-2 text-slate-400 text-sm">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
+        <div className="flex items-center gap-2 text-gray-500 text-sm">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
           {players.length === 0
             ? 'Waiting for players…'
             : `${players.length} player${players.length !== 1 ? 's' : ''} joined`}
@@ -102,13 +102,13 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             {visiblePlayers.map((p) => (
               <span
                 key={p.id}
-                className="px-3 py-1 bg-slate-700 text-slate-200 text-sm rounded-full"
+                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full"
               >
                 {p.nickname}
               </span>
             ))}
             {hiddenCount > 0 && (
-              <span className="px-3 py-1 bg-slate-600 text-slate-400 text-sm rounded-full">
+              <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full">
                 +{hiddenCount} more
               </span>
             )}

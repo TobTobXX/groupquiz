@@ -82,26 +82,26 @@ export default function HostLibrary() {
 
         <Link
           to="/create"
-          className="w-full text-center border-2 border-dashed border-slate-600 hover:border-indigo-500 hover:bg-indigo-950 text-slate-400 hover:text-indigo-300 font-semibold py-3 rounded-xl transition-colors"
+          className="w-full text-center border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold py-3 rounded-xl transition-colors"
         >
           + Create a new quiz
         </Link>
 
         {ownQuizzes.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">My Quizzes</h2>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">My Quizzes</h2>
             {ownQuizzes.map((quiz) => (
-              <div key={quiz.id} className="bg-slate-800 rounded-xl px-5 py-4 flex items-center justify-between">
+              <div key={quiz.id} className="bg-gray-100 rounded-xl px-5 py-4 flex items-center justify-between">
                 <div>
                   <span className="font-medium">{quiz.title}</span>
-                  <p className="text-slate-500 text-xs mt-0.5">
+                  <p className="text-gray-400 text-xs mt-0.5">
                     {new Date(quiz.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Link
                     to={`/edit?quizId=${quiz.id}`}
-                    className="text-sm text-slate-400 hover:text-white transition-colors px-2 py-1"
+                    className="text-sm text-gray-500 hover:text-gray-900 transition-colors px-2 py-1"
                   >
                     Edit
                   </Link>
@@ -126,9 +126,9 @@ export default function HostLibrary() {
 
         {publicQuizzes.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Public Quizzes</h2>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Public Quizzes</h2>
             {publicQuizzes.map((quiz) => (
-              <div key={quiz.id} className="bg-slate-800 rounded-xl px-5 py-4 flex items-center justify-between">
+              <div key={quiz.id} className="bg-gray-100 rounded-xl px-5 py-4 flex items-center justify-between">
                 <span className="font-medium">{quiz.title}</span>
                 <button
                   onClick={() => createSession(quiz.id)}
@@ -142,7 +142,7 @@ export default function HostLibrary() {
         )}
 
         {!loading && publicQuizzes.length === 0 && ownQuizzes.length === 0 && (
-          <p className="text-slate-500 text-center py-8">No quizzes available.</p>
+          <p className="text-gray-400 text-center py-8">No quizzes available.</p>
         )}
         </div>
       </div>

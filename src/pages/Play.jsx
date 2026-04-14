@@ -327,7 +327,7 @@ export default function Play() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <p className="text-red-400 text-2xl font-bold mb-2">Error</p>
-        <p className="text-slate-300">{error}</p>
+        <p className="text-gray-600">{error}</p>
       </div>
     )
   }
@@ -335,7 +335,7 @@ export default function Play() {
   if (!nickname) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-4 border-white border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-4 border-gray-700 border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -350,9 +350,9 @@ export default function Play() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top bar */}
-      <div className="px-4 py-3 border-b border-slate-700">
-        <p className="text-sm text-slate-400">
-          Playing as <strong className="text-white">{nickname}</strong>
+      <div className="px-4 py-3 border-b border-gray-200">
+        <p className="text-sm text-gray-500">
+          Playing as <strong className="text-gray-900">{nickname}</strong>
         </p>
       </div>
 
@@ -363,7 +363,7 @@ export default function Play() {
         {sessionState === 'waiting' && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-2xl font-semibold text-center">Waiting for the host to start…</p>
-            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
           </div>
         )}
 
@@ -372,26 +372,26 @@ export default function Play() {
           <div className="w-full max-w-sm flex flex-col gap-4">
             <div className="text-center">
               <p className="text-4xl font-bold">Game over</p>
-              <p className="text-slate-300 mt-1">Thanks for playing, <strong>{nickname}</strong>!</p>
+              <p className="text-gray-600 mt-1">Thanks for playing, <strong>{nickname}</strong>!</p>
             </div>
             {leaderboard.length > 0 && (
               <div className="flex flex-col gap-2">
                 {leaderboard.map((p, i) => (
                   <div
                     key={p.id}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === storedPlayerId ? 'bg-indigo-700' : 'bg-slate-800'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === storedPlayerId ? 'bg-indigo-700 text-white' : 'bg-gray-200'}`}
                   >
-                    <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
+                    <span className={`font-mono w-6 text-right ${p.id === storedPlayerId ? 'text-indigo-200' : 'text-gray-400'}`}>{i + 1}</span>
                     <span className="flex-1 font-semibold">{p.nickname}</span>
-                    <span className="text-white font-bold">{p.score}</span>
-                    <span className="text-slate-300 text-sm">{p.correct_count ?? 0}/{questions.length}</span>
+                    <span className={`font-bold ${p.id === storedPlayerId ? 'text-white' : 'text-gray-900'}`}>{p.score}</span>
+                    <span className={`text-sm ${p.id === storedPlayerId ? 'text-indigo-200' : 'text-gray-500'}`}>{p.correct_count ?? 0}/{questions.length}</span>
                   </div>
                 ))}
               </div>
             )}
             <button
               onClick={() => navigate('/')}
-              className="text-indigo-400 hover:text-indigo-300 text-sm transition-colors text-center"
+              className="text-indigo-600 hover:text-indigo-500 text-sm transition-colors text-center"
             >
               Back to home
             </button>
@@ -402,7 +402,7 @@ export default function Play() {
         {sessionState === 'active' && !question && !feedbackShown && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-2xl font-semibold text-center">Waiting for the game to end…</p>
-            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
           </div>
         )}
 
@@ -438,10 +438,10 @@ export default function Play() {
               })}
             </div>
             {answerSubmitted && (
-              <p className="text-center text-slate-300 text-sm">Answer submitted</p>
+              <p className="text-center text-gray-500 text-sm">Answer submitted</p>
             )}
             {alreadyAnswered && (
-              <p className="text-center text-slate-400 text-sm">You already answered this question</p>
+              <p className="text-center text-gray-500 text-sm">You already answered this question</p>
             )}
           </div>
         )}

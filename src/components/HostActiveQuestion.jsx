@@ -20,13 +20,13 @@ export default function HostActiveQuestion({
   onEnd,
 }) {
   return (
-    <div className="fixed inset-0 flex flex-col bg-slate-900">
+    <div className="fixed inset-0 flex flex-col bg-gray-50">
       {/* Question row: Timer left, Answer count right */}
       <div className="flex items-center justify-center gap-8 px-8 py-6 min-h-64 relative">
         {/* Timer - left edge */}
         <div className="absolute left-20">
           {timeRemaining !== null && (
-            <div className="bg-slate-700 rounded-2xl px-6 py-3 text-6xl font-bold text-white tabular-nums">
+            <div className="bg-white border border-gray-200 rounded-2xl px-6 py-3 text-6xl font-bold text-gray-900 tabular-nums shadow">
               {timeRemaining}
             </div>
           )}
@@ -35,7 +35,7 @@ export default function HostActiveQuestion({
         {/* Question text - center */}
         <div className="flex-1 max-w-7xl">
           {question && (
-            <h1 className="text-6xl md:text-7xl font-bold text-center text-white leading-tight">
+            <h1 className="text-6xl md:text-7xl font-bold text-center text-gray-900 leading-tight">
               {question.question_text}
             </h1>
           )}
@@ -43,8 +43,8 @@ export default function HostActiveQuestion({
 
         {/* Answer count - right edge, single line */}
         <div className="absolute right-20">
-          <div className="bg-slate-700 rounded-2xl px-6 py-3 text-5xl font-bold text-white tabular-nums">
-            {answerCount}<span className="text-3xl text-slate-400"> / {playerCount}</span>
+          <div className="bg-white border border-gray-200 rounded-2xl px-6 py-3 text-5xl font-bold text-gray-900 tabular-nums shadow">
+            {answerCount}<span className="text-3xl text-gray-400"> / {playerCount}</span>
           </div>
         </div>
       </div>
@@ -74,13 +74,13 @@ export default function HostActiveQuestion({
       </div>
 
       {/* Bottom bar: Join code left, controls center, question count + exit right */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-6 py-7 bg-slate-800/50 gap-4">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-6 py-7 bg-white/90 border-t border-gray-200 gap-4">
         {/* Join code - lower left */}
         <div>
           {joinCode && (
-            <div className="text-slate-400 text-2xl">
+            <div className="text-gray-500 text-2xl">
               <span className="mr-2">Code:</span>
-              <span className="text-white font-bold text-4xl tracking-wider">{joinCode}</span>
+              <span className="text-gray-900 font-bold text-4xl tracking-wider">{joinCode}</span>
             </div>
           )}
         </div>
@@ -104,14 +104,14 @@ export default function HostActiveQuestion({
 
         {/* Question count + fullscreen + Exit - right column */}
         <div className="flex items-center justify-end gap-4">
-          <div className="text-slate-400 text-2xl whitespace-nowrap">
+          <div className="text-gray-500 text-2xl whitespace-nowrap">
             <span className="mr-2">Question:</span>
-            <span className="text-white font-bold text-5xl">{currentQuestionIndex + 1}</span>
-            <span className="text-white font-bold text-5xl"> / {totalQuestions}</span>
+            <span className="text-gray-900 font-bold text-5xl">{currentQuestionIndex + 1}</span>
+            <span className="text-gray-900 font-bold text-5xl"> / {totalQuestions}</span>
           </div>
           <button
             onClick={onToggleFullscreen}
-            className="p-2 text-slate-400 hover:text-white transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-900 transition-colors"
             title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
             {isFullscreen ? (
@@ -126,7 +126,7 @@ export default function HostActiveQuestion({
           </button>
           <button
             onClick={onEnd}
-            className="bg-slate-700 hover:bg-red-700 text-white font-semibold py-5 px-8 rounded-lg transition-colors text-2xl"
+            className="bg-gray-200 hover:bg-red-600 text-gray-800 hover:text-white font-semibold py-5 px-8 rounded-lg transition-colors text-2xl"
           >
             Exit
           </button>

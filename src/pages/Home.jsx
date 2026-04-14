@@ -76,7 +76,7 @@ export default function Home() {
 
         {/* Join section */}
         <div className="w-full max-w-sm flex flex-col gap-4">
-          <h2 className="text-slate-400 text-sm font-semibold uppercase tracking-wider text-center">Join via code</h2>
+          <h2 className="text-gray-500 text-sm font-semibold uppercase tracking-wider text-center">Join via code</h2>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
               type="text"
@@ -85,7 +85,7 @@ export default function Home() {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <input
               type="text"
@@ -93,7 +93,7 @@ export default function Home() {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             {error && <p className="text-red-400 text-sm">{error}</p>}
             <button
@@ -112,14 +112,14 @@ export default function Home() {
           href='https://codeberg.org/TobTobXX/kahoot-but-not-shit'
           target='_blank'
           rel='noopener noreferrer'
-          className='text-sm text-slate-500 hover:text-slate-300 transition-colors'
+          className='text-sm text-gray-500 hover:text-gray-700 transition-colors'
         >
           Source
         </a>
-        <span className='text-slate-600'>|</span>
+        <span className='text-gray-300'>|</span>
         <button
           disabled
-          className='text-sm text-slate-600 cursor-not-allowed'
+          className='text-sm text-gray-400 cursor-not-allowed'
           title='Donate (coming soon)'
         >
           Donate
