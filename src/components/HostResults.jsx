@@ -112,8 +112,8 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                   >
                     <span className={`font-bold w-6 text-right tabular-nums ${medal}`}>{i + 1}</span>
                     <span className="flex-1 font-semibold truncate">{player.nickname}</span>
-                    <span className="text-white tabular-nums">{player.score}</span>
-                    <span className="text-white font-bold text-sm tabular-nums">{player.correct_count ?? 0}/{questions.length}</span>
+                    <span className="text-white font-bold tabular-nums">{player.score}</span>
+                    <span className="text-slate-300 text-sm tabular-nums">{player.correct_count ?? 0}/{questions.length}</span>
                   </div>
                 )
               })}
