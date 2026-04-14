@@ -18,11 +18,11 @@ Core quiz platform fully functional with real-time sync, server-side scoring, sp
 
 Post-session results screen for the host: final leaderboard, per-question response distribution, average response time, and % correct. Host controls are complete: pause, skip, replay question. UI is polished end-to-end. The full flow works without any hardcoded values or missing pieces.
 
-- [ ] Post-session results screen with final leaderboard
-- [ ] Per-question breakdown: response distribution, average time, % correct
-- [ ] Host controls: pause, skip forward/back, replay question
-- [ ] Full end-to-end flow works without hardcoded values
-- [ ] UI is consistent and polished across all screens
+- [x] Post-session results screen with final leaderboard
+- [x] Per-question breakdown: response distribution, average time, % correct
+- [x] Host controls: pause, skip forward/back, replay question
+- [x] Full end-to-end flow works without hardcoded values
+- [x] UI is consistent and polished across all screens
 
 ## Technical debt
 
