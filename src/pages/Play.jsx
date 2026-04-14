@@ -54,23 +54,21 @@ export default function Play() {
     if (closedQuestion && pid) {
       const { data: pa } = await supabase
         .from('player_answers')
-        .select('answer_id, points_earned, answers(is_correct)')
+        .select('answer_id, points_earned')
         .eq('player_id', pid)
         .eq('question_id', closedQuestion.id)
         .maybeSingle()
-      const correct = pa?.answers?.is_correct ?? false
+      // Derive correctness from points_earned: wrong answers always earn 0.
+      const correct = pa ? (pa.points_earned ?? 0) > 0 : false
       setSubmittedAnswerId(pa?.answer_id ?? null)
       setAnswerSubmitted(!!pa)
       setIsCorrect(pa ? correct : null)
       setPointsEarned(pa?.points_earned ?? 0)
 
-      const { data: correctAnswers } = await supabase
-        .from('answers')
-        .select('id')
-        .eq('question_id', closedQuestion.id)
-        .eq('is_correct', true)
-      if (slots && correctAnswers?.length === 1) {
-        const correctAnswerId = correctAnswers[0].id
+      // Fetch correct answer via RPC — only works after the question window closes.
+      const { data: correctAnswerId } = await supabase
+        .rpc('get_correct_answer_id', { p_session_id: sid, p_question_id: closedQuestion.id })
+      if (slots && correctAnswerId) {
         const idx = slots.findIndex((s) => s.answer_id === correctAnswerId)
         setCorrectSlotIndex(idx >= 0 ? idx : null)
       } else {
