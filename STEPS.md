@@ -43,7 +43,6 @@ Items deferred to a later version. The version marker indicates the earliest poi
 
 - [ ] **v0.9** — `player_id` in `localStorage` is unauthenticated; any client can forge a player identity. Left unresolved — players are intentionally unauthenticated by design.
 - [ ] **v0.9** — `session_question_answers` is populated eagerly when a session starts — a quiz creator who edits answers mid-session may cause inconsistencies. Consider regenerating assignments when a question is reopened.
-- [ ] **v0.9** — Image URLs are free-text only. For a self-hostable app, users need somewhere to host images. Supabase Storage is the natural fit but adds another infrastructure piece. Consider wiring it up alongside auth.
 - [ ] **future** — Take a hard look at linter ignores (`eslint-disable` comments) introduced during implementation. Evaluate whether each one is justified or whether the pattern they suppress should be fixed instead.
 - [ ] **future** — Full security audit: clients can query questions/answers for future questions before they are shown (no row-level restriction by session state), and other unenumerated cheat vectors introduced by the all-anon-read RLS posture.
 - [ ] **future** — Join code collision is unhandled; if a duplicate code is generated the insert fails with a constraint error instead of retrying with a new code.
@@ -52,4 +51,7 @@ Items deferred to a later version. The version marker indicates the earliest poi
 - [ ] **future** — Quiz save (insert quiz → insert questions → insert answers) runs as three separate statements. If the answers insert fails, orphaned question rows are left. Fix with an atomic Postgres RPC that does all three inserts in one transaction.
 - [ ] **future** — Host again doesn't work.
 
+## Future ideas:
+
+- Pro/paid users can upload images (supabase bucket / S3) which will be shown at the question.
 
