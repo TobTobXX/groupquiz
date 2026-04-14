@@ -27,7 +27,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
       // 2. Questions for this quiz
       const { data: qs } = await supabase
         .from('questions')
-        .select('id, question_text, time_limit, points, order_index')
+        .select('id, question_text, time_limit, points, order_index, image_url')
         .eq('quiz_id', quizId)
         .order('order_index')
       if (!qs || qs.length === 0) { setLoading(false); return }
@@ -144,7 +144,18 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
               }
 
               return (
-                <div key={q.id} className="bg-indigo-50 rounded-xl p-5 flex flex-col gap-4">
+                <div key={q.id} className="bg-indigo-50 rounded-xl p-5 flex gap-4">
+                  {/* Optional image — left side */}
+                  {q.image_url && (
+                    <img
+                      src={q.image_url}
+                      alt=""
+                      className="max-h-28 max-w-40 object-contain rounded-lg shrink-0 self-start"
+                    />
+                  )}
+
+                  {/* Question content — right side */}
+                  <div className="flex-1 flex flex-col gap-4 min-w-0">
                   {/* Question header */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
@@ -207,6 +218,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                       })}
                     </div>
                   )}
+                  </div>{/* end question content */}
                 </div>
               )
             })}

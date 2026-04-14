@@ -30,6 +30,17 @@ export default function HostQuestionReview({
         )}
       </div>
 
+      {/* Question image */}
+      {question?.image_url && (
+        <div className="flex justify-center px-4 pb-2">
+          <img
+            src={question.image_url}
+            alt=""
+            className="max-h-56 object-contain rounded-xl"
+          />
+        </div>
+      )}
+
       {/* Main: slot grid + optional leaderboard */}
       <div className="flex-1 flex gap-4 px-4 pb-4 min-h-0">
         {/* Slot grid */}
