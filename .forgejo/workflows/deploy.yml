@@ -7,8 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: docker
-    container: node:lts
+    runs-on: codeberg-tiny
     steps:
       - uses: actions/checkout@v4
 
