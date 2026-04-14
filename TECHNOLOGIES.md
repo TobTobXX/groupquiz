@@ -13,9 +13,11 @@ All authorization is enforced via Postgres Row Level Security (RLS) policies. Bu
 
 - **PostgreSQL** — primary data store for quizzes, questions, sessions, answers, and scores.
 - **Row Level Security (RLS)** — enforces who can read and write what, directly at the database level.
-- **Supabase Auth** — handles quiz creator accounts (email/password). Players do not need an account. Auth state is exposed app-wide via `AuthContext`; protected routes (`/create`, `/edit/:quizId`) redirect unauthenticated users to `/login`.
+- **Supabase Auth** — handles quiz creator accounts (email/password). Players do not need an account. Auth state is exposed app-wide via `AuthContext`; protected routes (`/create`, `/edit`) redirect unauthenticated users to `/login`.
 - **Supabase Realtime** — WebSocket-based pub/sub over Postgres changes. Used for syncing session state across host and all players in real time. Enabled on `sessions`, `players`, and `player_answers`.
-- **Postgres Functions** — used for logic that must run server-side, most importantly score calculation on answer submission.
+- **Postgres Functions** — used for logic that must run server-side: session/player creation (with secret generation), host actions (start/advance/close/end), answer submission with scoring, and quiz save. All host and player mutations go through security-definer RPCs that verify a secret UUID stored in `localStorage`; no `auth.users` entries are created for players.
+- **Supabase Storage** — `images` bucket (public, JPEG, 500 KiB limit) for question images. Upload is restricted to pro users (flagged in `profiles.is_pro`). Images are stored at `{userId}/{questionId}.jpg`.
+- **pg_cron** — scheduled job runs hourly to delete sessions older than 12 hours (cascade removes players, answers, etc.).
 
 ## Database schema
 
@@ -61,6 +63,7 @@ All tables have RLS enabled. As of v0.9, user-scoped policies are in place: `qui
 | `question_open` | boolean | default true; controls whether the current question accepts answers |
 | `question_opened_at` | timestamptz | nullable; set automatically by trigger when question advances or reopens |
 | `current_question_slots` | jsonb | nullable; array of 4 answer slot assignments sent to players via realtime |
+| `host_secret` | uuid | not null; hidden from all client roles; stored in `localStorage` as `host_secret`; verified by host action RPCs |
 | `created_at` | timestamptz | default now() |
 
 ### `session_question_answers`
@@ -82,6 +85,9 @@ All tables have RLS enabled. As of v0.9, user-scoped policies are in place: `qui
 | `session_id` | uuid FK → sessions | cascade delete |
 | `nickname` | text | not null |
 | `score` | integer | not null; default 0 |
+| `streak` | integer | not null; default 0; consecutive correct answers |
+| `correct_count` | integer | not null; default 0; total correct answers |
+| `secret` | uuid | not null; hidden from all client roles; stored in `localStorage` as `player_secret`; verified by `submit_answer` RPC |
 | `joined_at` | timestamptz | default now() |
 
 ### `player_answers`
@@ -92,8 +98,15 @@ All tables have RLS enabled. As of v0.9, user-scoped policies are in place: `qui
 | `question_id` | uuid FK → questions | cascade delete |
 | `answer_id` | uuid FK → answers | |
 | `points_earned` | integer | not null; default 0; server-computed time-decayed score for this answer |
+| `response_time_ms` | integer | nullable; milliseconds from question open to answer submission |
 | `created_at` | timestamptz | default now() |
 | — | unique | `(player_id, question_id)` — one answer per player per question |
+
+### `profiles`
+| column | type | notes |
+|---|---|---|
+| `id` | uuid PK FK → auth.users | cascade delete |
+| `is_pro` | boolean | not null; default false; set manually via Supabase dashboard; gates image upload |
 
 ## File index
 
@@ -139,43 +152,57 @@ Each route directory at the project root contains an `index.html` that is identi
 | File | Purpose |
 |---|---|
 | `src/main.jsx` | React entry point; mounts app with `BrowserRouter` |
-| `src/App.jsx` | Route definitions: `/`, `/login`, `/host`, `/host/:sessionId`, `/join/:code`, `/play/:code`, `/create`, `/edit/:quizId`; `/library` redirects to `/host` |
+| `src/App.jsx` | Route definitions: `/`, `/login`, `/host`, `/join`, `/play`, `/create`, `/edit`; context passed via query params; `/library` redirects to `/host` |
 | `src/index.css` | Tailwind CSS import + dark base styles |
 | `src/lib/supabase.js` | Supabase client singleton |
 | `src/lib/slots.js` | Slot shuffle/color/icon utilities for split-screen answer layout |
 | `src/lib/utils.js` | Shared utility helpers |
+| `src/lib/imageUpload.js` | Resizes an image file to ≤1500×1000 px, encodes as JPEG, and uploads to the `images` storage bucket; returns the public URL |
+| `src/lib/quizExport.js` | `exportQuiz` — serialises a quiz to JSON with base64-embedded images; `importQuiz` — parses JSON, uploads images, and calls `save_quiz` RPC |
 | `src/context/AuthContext.jsx` | React context providing `user`, `loading`, and `signOut` from Supabase Auth |
-| `src/pages/Home.jsx` | Landing page — join a game by code, or navigate to host/login |
-| `src/pages/Login.jsx` | Auth page — email/password login for quiz creators |
-| `src/pages/Host.jsx` | Thin router — renders `HostLibrary` or `HostSession` depending on URL |
-| `src/pages/Join.jsx` | Join page — join by URL; handles auto-rejoin and fresh join |
-| `src/pages/Create.jsx` | Quiz editor — create and edit quizzes and their questions |
-| `src/pages/Play.jsx` | Player interface — answer questions, see feedback + leaderboard |
-| `src/components/HostSession.jsx` | Host session shell — wraps HostLobby, and active-question views |
-| `src/components/HostLibrary.jsx` | Quiz picker — browse own and public quizzes, start a session |
+| `src/pages/` | One file per route: `Home`, `Login`, `Host` (thin router → HostLibrary or HostSession), `Join`, `Create`, `Play` |
+| `src/components/Header.jsx` | Shared header bar — logo, library link, auth controls (login/logout/create) |
+| `src/components/HostSession.jsx` | Host session shell — orchestrates HostLobby, HostActiveQuestion, HostQuestionReview, and HostResults |
+| `src/components/HostLibrary.jsx` | Quiz picker — browse own and public quizzes, start a session, import/export |
 | `src/components/HostLobby.jsx` | Waiting room — players gather here before the game starts |
 | `src/components/HostActiveQuestion.jsx` | Active-question view shown to host during a live question |
+| `src/components/HostQuestionReview.jsx` | Between-question review — correct answer highlighted, per-slot response counts, optional top-5 leaderboard |
+| `src/components/HostResults.jsx` | Post-session results screen — final leaderboard and per-question breakdown with response distribution and avg time |
 | `src/components/FeedbackView.jsx` | Post-answer feedback screen shown to players |
 | `src/components/QuestionEditor.jsx` | Question + answer editor sub-component used in Create |
 | `src/components/SlotIcon.jsx` | Renders the colored shape icon for an answer slot |
 
 ### Database migrations (`supabase/migrations/`)
 
+Migrations are applied in filename order. Each file is named `<YYYYMMDDHHmmss>_<description>.sql`.
+
 | File | What it does |
 |---|---|
-| `20260413123158_initial.sql` | Creates core schema: `quizzes`, `questions`, `answers`, `sessions`, `players` |
-| `20260413123159_seed.sql` | Inserts sample quiz "General Knowledge" with 3 questions |
-| `20260413123160_open_policies.sql` | Open `allow all` RLS policies for all 5 core tables |
-| `20260413130000_enable_realtime_sessions.sql` | Adds `sessions` to the Supabase realtime publication |
-| `20260414000000_player_answers.sql` | Adds `player_answers` table + `question_open` on `sessions`; enables realtime on `player_answers` and `players` |
-| `20260414000001_player_answers_policy.sql` | Open `allow all` RLS policy for `player_answers` |
-| `20260415000000_server_side_scoring.sql` | Tightens RLS on `players`/`player_answers`; adds `submit_answer` security-definer function |
-| `20260416000000_time_based_scoring.sql` | Adds `question_opened_at` on `sessions`, `points_earned` on `player_answers`; updates `submit_answer` with time-decay scoring |
-| `20260417000000_split_screen.sql` | Adds `session_question_answers` table, `current_question_slots` on `sessions`; shuffle/open question flow; updates `submit_answer` to validate slot membership |
-| `20260413195737_auth_quizzes.sql` | Adds `creator_id` + `is_public` to `quizzes`; enables realtime on `session_question_answers` |
-| `20260413195738_rls_auth.sql` | Replaces open policies with user-scoped RLS for `quizzes`, `questions`, `answers` |
-| `20260413195739_submit_answer_gate.sql` | Adds auth-uid gate to `submit_answer` (later superseded) |
-| `20260413195740_fix_submit_answer_gate.sql` | Removes incorrect auth gate from `submit_answer` (player IDs are not auth UIDs) |
+| `…_initial.sql` | Creates core schema: `quizzes`, `questions`, `answers`, `sessions`, `players` |
+| `…_seed.sql` | Inserts sample quiz "General Knowledge" with 3 questions |
+| `…_open_policies.sql` | Open `allow all` RLS policies for all 5 core tables |
+| `…_enable_realtime_sessions.sql` | Adds `sessions` to the Supabase realtime publication |
+| `…_player_answers.sql` | Adds `player_answers` table + `question_open` on `sessions`; enables realtime on `player_answers` and `players` |
+| `…_player_answers_policy.sql` | Open `allow all` RLS policy for `player_answers` |
+| `…_session_cleanup_cron.sql` | Enables `pg_cron`; schedules hourly job to delete sessions older than 12 h |
+| `…_auth_quizzes.sql` | Adds `creator_id` + `is_public` to `quizzes`; enables realtime on `session_question_answers` |
+| `…_rls_auth.sql` | Replaces open policies with user-scoped RLS for `quizzes`, `questions`, `answers` |
+| `…_submit_answer_gate.sql` | Adds auth-uid gate to `submit_answer` (later superseded) |
+| `…_fix_submit_answer_gate.sql` | Removes incorrect auth gate from `submit_answer` (player IDs are not auth UIDs) |
+| `…_server_side_scoring.sql` | Tightens RLS on `players`/`player_answers`; adds `submit_answer` security-definer function |
+| `…_time_based_scoring.sql` | Adds `question_opened_at` on `sessions`, `points_earned` on `player_answers`; updates `submit_answer` with time-decay scoring |
+| `…_split_screen.sql` | Adds `session_question_answers` table, `current_question_slots` on `sessions`; shuffle/open question flow; updates `submit_answer` to validate slot membership |
+| `…_response_time.sql` | Adds `response_time_ms` to `player_answers`; persists elapsed time in `submit_answer` |
+| `…_streaks.sql` | Adds `streak` to `players`; applies streak flame bonus (+10% per flame ≥3) in `submit_answer` |
+| `…_correct_count.sql` | Adds `correct_count` to `players`; incremented by `submit_answer` on correct answers |
+| `…_save_quiz_rpc.sql` | Adds `save_quiz(title, is_public, questions jsonb)` RPC for atomic quiz creation |
+| `…_restrict_answers.sql` | Revokes `is_correct` SELECT from `anon` role; adds `get_correct_answer_id` RPC (gated on question being closed) |
+| `…_players_rls.sql` | Drops open UPDATE policy on `players`; keeps SELECT + INSERT open |
+| `…_submit_answer_guards.sql` | Adds window-open and current-question guards to `submit_answer` |
+| `…_pro_images.sql` | Adds `profiles` table (`is_pro`); creates `images` storage bucket; upload restricted to pro users |
+| `…_images_select_policy.sql` | Scopes images SELECT policy to authenticated users reading their own folder |
+| `…_images_jpeg.sql` | Switches `images` bucket from JPEG-XL to JPEG |
+| `…_anon_secrets.sql` | Adds `host_secret` to `sessions` and `secret` to `players`; hides both from client roles; adds host-action RPCs (`create_session`, `join_session`, `start_game`, `open_next_question`, `close_question`, `end_game`) and updates `submit_answer` to require `p_player_secret` |
 
 ## Quiz export format
 
