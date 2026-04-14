@@ -379,7 +379,7 @@ export default function Play() {
                 {leaderboard.map((p, i) => (
                   <div
                     key={p.id}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === storedPlayerId ? 'bg-indigo-700 text-white' : 'bg-gray-200'}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === storedPlayerId ? 'bg-indigo-700 text-white' : 'bg-indigo-100'}`}
                   >
                     <span className={`font-mono w-6 text-right ${p.id === storedPlayerId ? 'text-indigo-200' : 'text-gray-400'}`}>{i + 1}</span>
                     <span className="flex-1 font-semibold">{p.nickname}</span>

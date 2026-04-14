@@ -91,7 +91,7 @@ export default function HostLibrary() {
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">My Quizzes</h2>
             {ownQuizzes.map((quiz) => (
-              <div key={quiz.id} className="bg-gray-100 rounded-xl px-5 py-4 flex items-center justify-between">
+              <div key={quiz.id} className="bg-indigo-50 rounded-xl px-5 py-4 flex items-center justify-between">
                 <div>
                   <span className="font-medium">{quiz.title}</span>
                   <p className="text-gray-400 text-xs mt-0.5">
@@ -128,7 +128,7 @@ export default function HostLibrary() {
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Public Quizzes</h2>
             {publicQuizzes.map((quiz) => (
-              <div key={quiz.id} className="bg-gray-100 rounded-xl px-5 py-4 flex items-center justify-between">
+              <div key={quiz.id} className="bg-indigo-50 rounded-xl px-5 py-4 flex items-center justify-between">
                 <span className="font-medium">{quiz.title}</span>
                 <button
                   onClick={() => createSession(quiz.id)}

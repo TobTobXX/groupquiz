@@ -108,7 +108,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                 return (
                   <div
                     key={player.id}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-200"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-100"
                   >
                     <span className={`font-bold w-6 text-right tabular-nums ${medal}`}>{i + 1}</span>
                     <span className="flex-1 font-semibold truncate">{player.nickname}</span>
@@ -144,7 +144,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
               }
 
               return (
-                <div key={q.id} className="bg-gray-200 rounded-xl p-5 flex flex-col gap-4">
+                <div key={q.id} className="bg-indigo-100 rounded-xl p-5 flex flex-col gap-4">
                   {/* Question header */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
@@ -183,7 +183,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                             </div>
                             {/* Bar */}
                             <div className="flex-1 flex items-center gap-2">
-                              <div className="flex-1 bg-gray-200 rounded-full h-5 overflow-hidden">
+                              <div className="flex-1 bg-indigo-200 rounded-full h-5 overflow-hidden">
                                 <div
                                   className="h-full rounded-full transition-all"
                                   style={{

@@ -102,13 +102,13 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             {visiblePlayers.map((p) => (
               <span
                 key={p.id}
-                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full"
+                className="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full"
               >
                 {p.nickname}
               </span>
             ))}
             {hiddenCount > 0 && (
-              <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full">
+              <span className="px-3 py-1 bg-indigo-50 text-indigo-500 text-sm rounded-full">
                 +{hiddenCount} more
               </span>
             )}

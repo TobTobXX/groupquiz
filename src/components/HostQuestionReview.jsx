@@ -70,7 +70,7 @@ export default function HostQuestionReview({
             {leaderboard.map((p, i) => {
               const medal = i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-amber-600' : 'text-gray-400'
               return (
-                <div key={p.id} className="flex items-center gap-3 px-5 py-4 bg-gray-200 rounded-xl">
+                <div key={p.id} className="flex items-center gap-3 px-5 py-4 bg-indigo-100 rounded-xl">
                   <span className={`font-bold text-2xl w-7 text-right tabular-nums ${medal}`}>{i + 1}</span>
                   <span className="flex-1 font-semibold text-2xl truncate">{p.nickname}</span>
                   <span className="text-gray-600 text-2xl tabular-nums">{p.score}</span>
