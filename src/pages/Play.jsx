@@ -297,7 +297,10 @@ export default function Play() {
   // Returns { className, style } for a slot, covering all interaction states.
   // Used by both the active-question grid (buttons) and the feedback grid (divs).
   function slotProps(slotIndex, color) {
-    const base = 'h-full rounded-2xl flex flex-col items-center justify-center gap-2 transition-opacity'
+    // h-full works in the active-question grid (explicit flex-1 grid-rows-2).
+    // In the feedback grid (auto row heights), h-full overflows the container —
+    // use py-6 there so items size to their content.
+    const base = `${feedbackShown ? 'py-6' : 'h-full'} rounded-2xl flex flex-col items-center justify-center gap-2 transition-opacity`
     const style = { backgroundColor: SLOT_COLOR_HEX[color] }
 
     if (feedbackShown) {
