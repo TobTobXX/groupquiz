@@ -21,6 +21,7 @@ Core quiz platform fully functional with real-time sync, server-side scoring, sp
 Items deferred to a later version. The version marker indicates the earliest point where it makes sense to address each one.
 
 - [ ] **future** — Full security audit: clients can query questions/answers for future questions before they are shown (no row-level restriction by session state), and other unenumerated cheat vectors introduced by the all-anon-read RLS posture.
+- [ ] Images accumulate in the bucket. How to emtpy?
 
 ## Future ideas:
 
@@ -28,5 +29,5 @@ Items deferred to a later version. The version marker indicates the earliest poi
 - Make it hostable on non-root servers (ie. don't fetch /assets/..., but assets/...)
 - Multiple correct answers
 - Question with 0 points or no right/wrong
-- Pro/paid users can upload images (supabase bucket / S3) which will be shown at the question.
+- Pro/paid users users. They can upload images.
 

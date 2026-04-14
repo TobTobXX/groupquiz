@@ -87,6 +87,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) onImageUpload(file)
+                e.target.value = ''
               }}
               className="w-full text-xs text-gray-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
