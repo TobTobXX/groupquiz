@@ -4,14 +4,13 @@ import SlotIcon from './SlotIcon'
 // slot feedback grid, and live leaderboard while waiting for next question.
 export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps, leaderboard, playerId }) {
   const playerStreak = leaderboard.find(p => p.id === playerId)?.streak ?? 0
-  const playerFlames = Math.max(0, playerStreak - 2)
 
   return (
     <div className="w-full max-w-xl flex flex-col gap-4">
       {/* Result banner */}
       {isCorrect !== null ? (
         <div className={`rounded-xl px-6 py-4 text-center font-bold text-xl ${isCorrect ? 'bg-emerald-600' : 'bg-red-600'}`}>
-          {isCorrect ? `Correct! +${pointsEarned} points${playerFlames > 0 ? ' ' + '🔥'.repeat(playerFlames) : ''}` : 'Wrong'}
+          {isCorrect ? <>Correct! +{pointsEarned} points{playerStreak >= 3 && <> 🔥<span className="text-orange-400 font-bold">{playerStreak}</span></>}</> : 'Wrong'}
         </div>
       ) : (
         <div className="rounded-xl px-6 py-4 text-center font-bold text-xl bg-slate-700">
@@ -46,7 +45,7 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
                 >
                   <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
                   <span className="flex-1 font-semibold">{p.nickname}</span>
-                  <span className="text-slate-300">{p.score}{Math.max(0, (p.streak ?? 0) - 2) > 0 && ' ' + '🔥'.repeat(Math.max(0, (p.streak ?? 0) - 2))}</span>
+                  <span className="text-slate-300">{p.score}{(p.streak ?? 0) >= 3 && <> 🔥<span className="text-orange-400 font-bold">{p.streak}</span></>}</span>
                 </div>
               )
             })}

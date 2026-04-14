@@ -112,7 +112,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                   >
                     <span className={`font-bold w-6 text-right tabular-nums ${medal}`}>{i + 1}</span>
                     <span className="flex-1 font-semibold truncate">{player.nickname}</span>
-                    <span className="text-slate-300 tabular-nums">{player.score}{Math.max(0, (player.streak ?? 0) - 2) > 0 && ' ' + '🔥'.repeat(Math.max(0, (player.streak ?? 0) - 2))}</span>
+                    <span className="text-slate-300 tabular-nums">{player.score}{(player.streak ?? 0) >= 3 && <> 🔥<span className="text-orange-400 font-bold">{player.streak}</span></>}</span>
                   </div>
                 )
               })}

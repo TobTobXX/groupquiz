@@ -383,7 +383,7 @@ export default function Play() {
                   >
                     <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
                     <span className="flex-1 font-semibold">{p.nickname}</span>
-                    <span className="text-slate-300">{p.score}{Math.max(0, (p.streak ?? 0) - 2) > 0 && ' ' + '🔥'.repeat(Math.max(0, (p.streak ?? 0) - 2))}</span>
+                    <span className="text-slate-300">{p.score}{(p.streak ?? 0) >= 3 && <> 🔥<span className="text-orange-400 font-bold">{p.streak}</span></>}</span>
                   </div>
                 ))}
               </div>
