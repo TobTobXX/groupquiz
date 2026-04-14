@@ -102,8 +102,8 @@ export default function HostQuestionReview({
             End Question
           </button>
           <button
-            onClick={onNext}
-            disabled={currentQuestionIndex >= totalQuestions - 1 || loadingSlots}
+            onClick={currentQuestionIndex >= totalQuestions - 1 ? onEnd : onNext}
+            disabled={loadingSlots}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-5 px-16 rounded-lg transition-colors text-2xl"
           >
             {loadingSlots ? '…' : 'Next Question'}
