@@ -28,19 +28,28 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
         })}
       </div>
 
-      {/* Leaderboard */}
-      <div className="flex flex-col gap-2">
-        {leaderboard.map((p, i) => (
-          <div
-            key={p.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === playerId ? 'bg-indigo-700' : 'bg-slate-800'}`}
-          >
-            <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
-            <span className="flex-1 font-semibold">{p.nickname}</span>
-            <span className="text-slate-300">{p.score}</span>
+      {/* Leaderboard — player above, self, player below */}
+      {leaderboard.length > 0 && (() => {
+        const idx = leaderboard.findIndex(p => p.id === playerId)
+        const visible = [idx - 1, idx, idx + 1].filter(i => i >= 0 && i < leaderboard.length)
+        return (
+          <div className="flex flex-col gap-2">
+            {visible.map(i => {
+              const p = leaderboard[i]
+              return (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg ${p.id === playerId ? 'bg-indigo-700' : 'bg-slate-800'}`}
+                >
+                  <span className="text-slate-400 font-mono w-6 text-right">{i + 1}</span>
+                  <span className="flex-1 font-semibold">{p.nickname}</span>
+                  <span className="text-slate-300">{p.score}</span>
+                </div>
+              )
+            })}
           </div>
-        ))}
-      </div>
+        )
+      })()}
 
       <p className="text-slate-400 text-sm text-center">Waiting for next question…</p>
     </div>

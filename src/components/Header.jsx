@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header className="flex items-center gap-4 px-6 py-4">
       {/* Left: logo + library link */}
-      <Link to="/" className="font-bold text-white hover:text-slate-200 transition-colors">
+      <Link to="/" className="text-4xl font-bold text-white hover:text-slate-200 transition-colors">
         Kbns
       </Link>
       <Link
