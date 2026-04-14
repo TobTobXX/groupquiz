@@ -23,7 +23,12 @@ export default function Join() {
     }
 
     async function check() {
-      const stored = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')
+      let stored = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')
+      // Discard entries older than 13 hours (sessions are cleaned up after 12h by cron)
+      if (stored?.joined_at && Date.now() - stored.joined_at > 13 * 60 * 60 * 1000) {
+        localStorage.removeItem(`player_${code}`)
+        stored = null
+      }
 
       const { data: session } = await supabase
         .from('sessions')
@@ -92,7 +97,7 @@ export default function Join() {
       return
     }
 
-    localStorage.setItem(`player_${code}`, JSON.stringify({ player_id: player.id, nickname }))
+    localStorage.setItem(`player_${code}`, JSON.stringify({ player_id: player.id, nickname, joined_at: Date.now() }))
     navigate(`/play?code=${code}`)
   }
 

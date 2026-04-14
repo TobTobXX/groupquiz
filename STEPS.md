@@ -24,8 +24,7 @@ Items deferred to a later version. The version marker indicates the earliest poi
 - [ ] **v0.9** — `session_question_answers` is populated eagerly when a session starts — a quiz creator who edits answers mid-session may cause inconsistencies. Consider regenerating assignments when a question is reopened.
 - [ ] **future** — Full security audit: clients can query questions/answers for future questions before they are shown (no row-level restriction by session state), and other unenumerated cheat vectors introduced by the all-anon-read RLS posture.
 - [x] **future** — Join code collision is unhandled; if a duplicate code is generated the insert fails with a constraint error instead of retrying with a new code.
-- [ ] **future** — Stale `waiting` sessions accumulate in the DB with no expiry or cleanup mechanism.
-- [x] **future** — `player_${code}` localStorage entries for finished sessions are only cleared when Play.jsx receives the realtime `finished` event. If the user closes the tab before that fires, the entry lingers indefinitely. Join.jsx already clears stale entries on mount by checking session state (lines 40–44).
+- [x] **future** — `player_${code}` localStorage entries for finished sessions are only cleared when Play.jsx receives the realtime `finished` event. If the user closes the tab before that fires, the entry lingers indefinitely. Fixed: `joined_at` timestamp stored in the entry; Join.jsx discards entries older than 13 hours on read.
 - [x] **future** — Quiz save (insert quiz → insert questions → insert answers) runs as three separate statements. If the answers insert fails, orphaned question rows are left. Fix with an atomic Postgres RPC that does all three inserts in one transaction.
 
 ## Future ideas:
