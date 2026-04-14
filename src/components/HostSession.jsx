@@ -26,7 +26,6 @@ export default function HostSession({ sessionId }) {
   const [loading, setLoading] = useState(true)
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
   const containerRef = useRef(null)
   const answersChannelRef = useRef(null)
   const questionOpenRef = useRef(true)
@@ -184,9 +183,6 @@ export default function HostSession({ sessionId }) {
   // Keep questionOpenRef in sync for use inside the timer callback
   useEffect(() => { questionOpenRef.current = questionOpen }, [questionOpen])
 
-  // Reset pause whenever the question changes or closes
-  useEffect(() => { setIsPaused(false) }, [questionOpen, currentQuestionIndex])
-
   // Countdown timer — resets when a new question opens
   useEffect(() => {
     if (!questionOpen || sessionState !== 'active') {
@@ -197,7 +193,6 @@ export default function HostSession({ sessionId }) {
     if (!question) return
     setTimeRemaining(question.time_limit ?? 30)
     const interval = setInterval(() => {
-      if (isPaused) return
       setTimeRemaining((t) => {
         if (t === null || t <= 0) {
           clearInterval(interval)
@@ -209,7 +204,7 @@ export default function HostSession({ sessionId }) {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [questionOpen, currentQuestionIndex, sessionState, hostQuestions, isPaused]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
+  }, [questionOpen, currentQuestionIndex, sessionState, hostQuestions]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
 
   async function startGame() {
     const { error: startError } = await supabase
@@ -270,56 +265,6 @@ export default function HostSession({ sessionId }) {
 
     setCurrentQuestionSlots(slots)
     setAnswerCount(0)
-  }
-
-  async function previousQuestion() {
-    const prev = currentQuestionIndex - 1
-    if (prev < 0) return
-    const prevQuestionId = hostQuestions[prev]?.id
-    if (!prevQuestionId) return
-
-    setLoadingSlots(true)
-    const { data: slots, error: slotsError } = await supabase.rpc('assign_answer_slots', {
-      p_session_id: sessionId,
-      p_question_id: prevQuestionId,
-      p_shuffle: shuffleAnswers,
-    })
-    setLoadingSlots(false)
-    if (slotsError) { setError(slotsError.message); return }
-
-    const { error } = await supabase
-      .from('sessions')
-      .update({ current_question_index: prev, question_open: true, current_question_slots: slots })
-      .eq('id', sessionId)
-    if (error) { setError(error.message); return }
-
-    setCurrentQuestionSlots(slots)
-    setAnswerCount(0)
-    setIsPaused(false)
-  }
-
-  async function replayQuestion() {
-    const questionId = hostQuestions[currentQuestionIndex]?.id
-    if (!questionId) return
-
-    setLoadingSlots(true)
-    const { data: slots, error: slotsError } = await supabase.rpc('assign_answer_slots', {
-      p_session_id: sessionId,
-      p_question_id: questionId,
-      p_shuffle: shuffleAnswers,
-    })
-    setLoadingSlots(false)
-    if (slotsError) { setError(slotsError.message); return }
-
-    const { error } = await supabase
-      .from('sessions')
-      .update({ question_open: true, current_question_slots: slots })
-      .eq('id', sessionId)
-    if (error) { setError(error.message); return }
-
-    setCurrentQuestionSlots(slots)
-    setAnswerCount(0)
-    setIsPaused(false)
   }
 
   async function closeQuestion() {
@@ -411,13 +356,9 @@ export default function HostSession({ sessionId }) {
             playerCount={players.length}
             loadingSlots={loadingSlots}
             isFullscreen={isFullscreen}
-            isPaused={isPaused}
             onToggleFullscreen={toggleFullscreen}
             onClose={closeQuestion}
             onNext={nextQuestion}
-            onBack={previousQuestion}
-            onReplay={replayQuestion}
-            onPause={() => setIsPaused((p) => !p)}
             onEnd={endGame}
           />
         )}
