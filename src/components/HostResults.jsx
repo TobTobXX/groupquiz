@@ -144,7 +144,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
               }
 
               return (
-                <div key={q.id} className="bg-indigo-100 rounded-xl p-5 flex flex-col gap-4">
+                <div key={q.id} className="bg-indigo-50 rounded-xl p-5 flex flex-col gap-4">
                   {/* Question header */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
