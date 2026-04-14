@@ -400,9 +400,11 @@ export default function HostSession({ sessionId }) {
             slots={currentQuestionSlots}
             answerCount={answerCount}
             playerCount={players.length}
+            loadingSlots={loadingSlots}
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}
             onClose={closeQuestion}
+            onNext={nextQuestion}
             onEnd={endGame}
           />
         )}

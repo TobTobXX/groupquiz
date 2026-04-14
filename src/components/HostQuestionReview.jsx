@@ -96,22 +96,22 @@ export default function HostQuestionReview({
         {/* Controls */}
         <div className="flex-1 flex justify-center gap-4">
           <button
-            onClick={onNext}
-            disabled={currentQuestionIndex >= totalQuestions - 1 || loadingSlots}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-5 px-28 rounded-lg transition-colors text-2xl"
+            disabled
+            className="bg-amber-600 opacity-40 cursor-not-allowed text-white font-bold py-5 px-16 rounded-lg text-2xl"
           >
-            {loadingSlots ? '…' : 'Next'}
+            End Question
           </button>
           <button
-            onClick={onEnd}
-            className="bg-slate-600 hover:bg-slate-500 text-white font-semibold py-5 px-28 rounded-lg transition-colors text-2xl"
+            onClick={onNext}
+            disabled={currentQuestionIndex >= totalQuestions - 1 || loadingSlots}
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-5 px-16 rounded-lg transition-colors text-2xl"
           >
-            End
+            {loadingSlots ? '…' : 'Next Question'}
           </button>
         </div>
 
-        {/* Question count + fullscreen */}
-        <div className="w-48 flex items-center justify-end gap-4">
+        {/* Question count + fullscreen + Exit */}
+        <div className="flex items-center gap-4">
           <div className="text-slate-400 text-2xl whitespace-nowrap">
             <span className="mr-2">Question:</span>
             <span className="text-white font-bold text-5xl">{currentQuestionIndex + 1}</span>
@@ -131,6 +131,12 @@ export default function HostQuestionReview({
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
               </svg>
             )}
+          </button>
+          <button
+            onClick={onEnd}
+            className="bg-slate-700 hover:bg-red-700 text-white font-semibold py-5 px-8 rounded-lg transition-colors text-2xl"
+          >
+            Exit
           </button>
         </div>
       </div>
