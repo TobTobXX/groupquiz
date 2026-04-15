@@ -113,30 +113,36 @@ export default function HostSession({ sessionId }) {
 
   // Realtime: session state changes + player joins
   useEffect(() => {
+    console.log('[host] Subscribing to session and player channels…')
     const sessionChannel = supabase
       .channel(`host-session-${sessionId}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
         (payload) => {
+          console.log('[host] Session update:', payload.new.state, 'q', payload.new.current_question_index, payload.new.question_open ? 'open' : 'closed')
           setSessionState(payload.new.state)
           setCurrentQuestionIndex(payload.new.current_question_index)
           setQuestionOpen(payload.new.question_open ?? true)
           setCurrentQuestionSlots(payload.new.current_question_slots ?? null)
         }
       )
-      .subscribe()
+      .subscribe((status) => console.log('[host] Session channel:', status))
 
     const playersChannel = supabase
       .channel(`players-${sessionId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `session_id=eq.${sessionId}` },
-        (payload) => setPlayers((ps) => [...ps, { id: payload.new.id, nickname: payload.new.nickname }])
+        (payload) => {
+          console.log('[host] Player joined:', payload.new.nickname)
+          setPlayers((ps) => [...ps, { id: payload.new.id, nickname: payload.new.nickname }])
+        }
       )
-      .subscribe()
+      .subscribe((status) => console.log('[host] Players channel:', status))
 
     return () => {
+      console.log('[host] Unsubscribing from session and player channels')
       supabase.removeChannel(sessionChannel)
       supabase.removeChannel(playersChannel)
     }
@@ -167,6 +173,7 @@ export default function HostSession({ sessionId }) {
       if (answersChannelRef.current) {
         supabase.removeChannel(answersChannelRef.current)
       }
+      console.log('[host] Subscribing to answers for question', qid)
       const ch = supabase
         .channel(`answers-${sessionId}-${qid}`)
         .on(
@@ -174,7 +181,7 @@ export default function HostSession({ sessionId }) {
           { event: 'INSERT', schema: 'public', table: 'player_answers', filter: `question_id=eq.${qid}` },
           () => setAnswerCount((c) => c + 1)
         )
-        .subscribe()
+        .subscribe((status) => console.log('[host] Answers channel:', status))
       answersChannelRef.current = ch
     }
 
@@ -254,6 +261,7 @@ export default function HostSession({ sessionId }) {
   }, [questionOpen, currentQuestionIndex, sessionState, hostQuestions]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
 
   async function startGame() {
+    console.log('[host] Fetching questions…')
     const { data: qs } = await supabase
       .from('questions')
       .select('id, question_text, time_limit, points, image_url, answers(id, answer_text, order_index, is_correct)')
@@ -263,6 +271,7 @@ export default function HostSession({ sessionId }) {
     const firstQuestionId = sortedQs[0]?.id
     if (!firstQuestionId) { setError('No questions found'); return }
 
+    console.log(`[host] Starting game (${sortedQs.length} question(s), shuffle=${shuffleAnswers})…`)
     setLoadingSlots(true)
     const { data: slots, error: slotsError } = await supabase.rpc('start_game', {
       p_session_id: sessionId,
@@ -271,8 +280,9 @@ export default function HostSession({ sessionId }) {
       p_shuffle: shuffleAnswers,
     })
     setLoadingSlots(false)
-    if (slotsError) { setError(slotsError.message); return }
+    if (slotsError) { console.error('[host] start_game failed:', slotsError.message); setError(slotsError.message); return }
 
+    console.log('[host] Game started — question 1 open')
     setCurrentQuestionSlots(slots)
     setHostQuestions(sortedQs)
     setTotalQuestions(sortedQs.length)
@@ -284,6 +294,7 @@ export default function HostSession({ sessionId }) {
     const nextQuestionId = hostQuestions[next]?.id
     if (!nextQuestionId) return
 
+    console.log(`[host] Opening question ${next + 1}…`)
     setLoadingSlots(true)
     const { data: slots, error: slotsError } = await supabase.rpc('open_next_question', {
       p_session_id: sessionId,
@@ -293,32 +304,36 @@ export default function HostSession({ sessionId }) {
       p_shuffle: shuffleAnswers,
     })
     setLoadingSlots(false)
-    if (slotsError) { setError(slotsError.message); return }
+    if (slotsError) { console.error('[host] open_next_question failed:', slotsError.message); setError(slotsError.message); return }
 
+    console.log(`[host] Question ${next + 1} open`)
     setCurrentQuestionSlots(slots)
     setAnswerCount(0)
   }
 
   async function closeQuestion() {
     if (!questionOpen) return
+    console.log('[host] Closing question…')
     const { error } = await supabase.rpc('close_question', {
       p_session_id: sessionId,
       p_host_secret: hostSecretRef.current,
     })
-    if (error) setError(error.message)
+    if (error) { console.error('[host] close_question failed:', error.message); setError(error.message) }
   }
 
   async function endGame() {
+    console.log('[host] Ending game…')
     const { error } = await supabase.rpc('end_game', {
       p_session_id: sessionId,
       p_host_secret: hostSecretRef.current,
     })
-    if (error) setError(error.message)
+    if (error) { console.error('[host] end_game failed:', error.message); setError(error.message) }
   }
 
   async function hostAgain() {
+    console.log('[host] Creating new session for same quiz…')
     const { data, error: err } = await supabase.rpc('create_session', { p_quiz_id: quizId })
-    if (err) { setError(err.message); return }
+    if (err) { console.error('[host] create_session failed:', err.message); setError(err.message); return }
     localStorage.setItem(`host_${data.session_id}`, data.host_secret)
     navigate(`/host?sessionId=${data.session_id}`)
   }

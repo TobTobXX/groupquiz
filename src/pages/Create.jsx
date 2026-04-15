@@ -157,6 +157,7 @@ export default function Create() {
       })),
     }))
 
+    console.log(`[create] Saving quiz "${title.trim()}" (${questions.length} question(s))…`)
     const { error } = await supabase.rpc('save_quiz', {
       p_title: title.trim(),
       p_is_public: isPublic,
@@ -164,11 +165,13 @@ export default function Create() {
     })
 
     if (error) {
+      console.error('[create] save_quiz failed:', error.message)
       setErrors({ submit: error.message ?? 'Failed to save quiz' })
       setSaving(false)
       return
     }
 
+    console.log('[create] Quiz saved')
     navigate('/host')
   }
 
@@ -176,11 +179,13 @@ export default function Create() {
   // and issue explicit deletes for rows the user removed. A bulk replace would require
   // cascade deletes + re-inserts, which would break foreign-key references mid-flight.
   async function handleEdit() {
+    console.log(`[edit] Saving quiz "${title.trim()}" (${questions.length} question(s))…`)
     const { error: quizError } = await supabase
       .from('quizzes')
       .update({ title: title.trim(), is_public: isPublic })
       .eq('id', quizId)
     if (quizError) {
+      console.error('[edit] Quiz update failed:', quizError.message)
       setErrors({ submit: quizError.message })
       setSaving(false)
       return
@@ -191,6 +196,7 @@ export default function Create() {
       .select('id')
       .eq('quiz_id', quizId)
     if (fetchErr) {
+      console.error('[edit] Failed to fetch existing questions:', fetchErr.message)
       setErrors({ submit: fetchErr.message })
       setSaving(false)
       return
@@ -199,12 +205,14 @@ export default function Create() {
 
     for (const qid of existingQIds) {
       if (!questions.find((q) => q.id === qid)) {
+        console.log('[edit] Deleting removed question', qid)
         await supabase.from('questions').delete().eq('id', qid)
       }
     }
 
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i]
+      console.log(`[edit] Upserting question ${i + 1}/${questions.length}…`)
       const { data: qData, error: qErr } = await supabase
         .from('questions')
         .upsert({
@@ -218,6 +226,7 @@ export default function Create() {
         })
         .select('id')
       if (qErr) {
+        console.error(`[edit] Question ${i + 1} upsert failed:`, qErr.message)
         setErrors({ submit: qErr.message })
         setSaving(false)
         return
@@ -232,6 +241,7 @@ export default function Create() {
 
       for (const aid of existingAIds) {
         if (!q.answers.find((a) => a.id === aid)) {
+          console.log('[edit] Deleting removed answer', aid)
           await supabase.from('answers').delete().eq('id', aid)
         }
       }
@@ -248,6 +258,7 @@ export default function Create() {
       }
     }
 
+    console.log('[edit] Done')
     navigate('/host')
   }
 

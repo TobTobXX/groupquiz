@@ -48,9 +48,11 @@ function loadImage(file) {
  * @returns {Promise<string>} public URL of the uploaded image
  */
 export async function processAndUploadImage(supabase, file, userId, questionId) {
+  console.log('[image] Processing image…')
   const img = await loadImage(file)
 
   const { w, h } = scaledDimensions(img.naturalWidth, img.naturalHeight)
+  console.log(`[image] Resizing to ${w}×${h} and encoding as JPEG…`)
 
   const canvas = document.createElement('canvas')
   canvas.width = w
@@ -60,6 +62,7 @@ export async function processAndUploadImage(supabase, file, userId, questionId) 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
 
   const path = `${userId}/${questionId}.jpg`
+  console.log(`[image] Uploading to storage (${(blob.size / 1024).toFixed(1)} KiB)…`)
   const { error } = await supabase.storage
     .from('images')
     .upload(path, blob, {
@@ -70,5 +73,6 @@ export async function processAndUploadImage(supabase, file, userId, questionId) 
   if (error) throw new Error(error.message)
 
   const { data } = supabase.storage.from('images').getPublicUrl(path)
+  console.log('[image] Upload complete')
   return data.publicUrl
 }

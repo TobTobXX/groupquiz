@@ -23,9 +23,11 @@ export default function Join() {
     }
 
     async function check() {
+      console.log(`[join] Checking session for code ${code}…`)
       let stored = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')
       // Discard entries older than 13 hours (sessions are cleaned up after 12h by cron)
       if (stored?.joined_at && Date.now() - stored.joined_at > 13 * 60 * 60 * 1000) {
+        console.log('[join] Stored player entry expired, discarding')
         localStorage.removeItem(`player_${code}`)
         stored = null
       }
@@ -37,12 +39,14 @@ export default function Join() {
         .maybeSingle()
 
       if (!session) {
+        console.log('[join] Session not found')
         setError('Session not found')
         setChecking(false)
         return
       }
 
       if (session.state === 'finished') {
+        console.log('[join] Session already finished')
         if (stored) localStorage.removeItem(`player_${code}`)
         setError('This session has ended')
         setChecking(false)
@@ -50,6 +54,7 @@ export default function Join() {
       }
 
       if (stored?.player_id) {
+        console.log('[join] Found stored player, checking if still valid…')
         const { data: player } = await supabase
           .from('players')
           .select('id')
@@ -57,10 +62,12 @@ export default function Join() {
           .maybeSingle()
 
         if (player) {
+          console.log('[join] Rejoining as', stored.nickname)
           navigate(`/play?code=${code}`, { replace: true })
           return
         }
 
+        console.log('[join] Stored player no longer exists, showing join form')
         // Player record gone — pre-fill nickname and show form
         setNickname(stored.nickname ?? '')
       }
@@ -75,16 +82,19 @@ export default function Join() {
     e.preventDefault()
     setSubmitError(null)
 
+    console.log(`[join] Joining session ${code} as "${nickname}"…`)
     const { data, error: joinError } = await supabase.rpc('join_session', {
       p_join_code: code,
       p_nickname: nickname,
     })
 
     if (joinError) {
+      console.error('[join] join_session failed:', joinError.message)
       setSubmitError(joinError.message)
       return
     }
 
+    console.log('[join] Joined successfully, navigating to play…')
     localStorage.setItem(`player_${code}`, JSON.stringify({
       player_id: data.player_id,
       player_secret: data.secret,

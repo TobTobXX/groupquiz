@@ -50,6 +50,7 @@ export default function Play() {
   // slots is passed as a parameter (not read from state) because this function is
   // called from within the realtime callback where currentQuestionSlots state may lag.
   async function loadFeedback(closedQuestion, sid, pid, slots) {
+    console.log('[play] Loading feedback for question', closedQuestion?.id)
     setFeedbackShown(true)
     if (closedQuestion && pid) {
       const { data: pa } = await supabase
@@ -60,6 +61,7 @@ export default function Play() {
         .maybeSingle()
       // Derive correctness from points_earned: wrong answers always earn 0.
       const correct = pa ? (pa.points_earned ?? 0) > 0 : false
+      console.log('[play] Player answer:', pa ? `${correct ? 'correct' : 'wrong'}, ${pa.points_earned} pts` : 'no answer recorded')
       setSubmittedAnswerId(pa?.answer_id ?? null)
       setAnswerSubmitted(!!pa)
       setIsCorrect(pa ? correct : null)
@@ -68,6 +70,7 @@ export default function Play() {
       // Fetch correct answer via RPC — only works after the question window closes.
       const { data: correctAnswerId } = await supabase
         .rpc('get_correct_answer_id', { p_session_id: sid, p_question_id: closedQuestion.id })
+      console.log('[play] Correct answer id:', correctAnswerId)
       if (slots && correctAnswerId) {
         const idx = slots.findIndex((s) => s.answer_id === correctAnswerId)
         setCorrectSlotIndex(idx >= 0 ? idx : null)
@@ -76,6 +79,7 @@ export default function Play() {
       }
     }
     if (sid) {
+      console.log('[play] Fetching leaderboard…')
       const { data: lb } = await supabase
         .from('players')
         .select('id, nickname, score, streak')
@@ -84,6 +88,7 @@ export default function Play() {
         .order('nickname')
       if (lb) setLeaderboard(lb)
     }
+    console.log('[play] Feedback loaded')
   }
 
   // Effect 1: load session, player, and initial question state.
@@ -181,6 +186,7 @@ export default function Play() {
   useEffect(() => {
     if (!sessionId) return
 
+    console.log('[play] Subscribing to session channel…')
     const channel = supabase
       .channel(`player-session-${code}`)
       .on(
@@ -193,6 +199,7 @@ export default function Play() {
           const newSlots = payload.new.current_question_slots ?? null
           const prevOpen = prevQuestionOpenRef.current
 
+          console.log('[play] Session update:', newState, 'q', newIndex, newQuestionOpen ? 'open' : 'closed')
           if (newState === 'finished') {
             localStorage.removeItem(`player_${code}`)
           }
@@ -239,11 +246,12 @@ export default function Play() {
           }
         }
       )
-      .subscribe()
+      .subscribe((status) => console.log('[play] Session channel:', status))
 
     channelRef.current = channel
 
     return () => {
+      console.log('[play] Unsubscribing from session channel')
       supabase.removeChannel(channel)
       channelRef.current = null
     }
@@ -277,6 +285,7 @@ export default function Play() {
     const answerId = slot.answer_id
     setSubmittedAnswerId(answerId)
 
+    console.log('[play] Submitting answer for question', question.id, 'slot', slotIndex)
     const { error } = await supabase
       .rpc('submit_answer', { p_player_id: playerId, p_player_secret: playerSecret, p_question_id: question.id, p_answer_id: answerId })
 
@@ -284,13 +293,16 @@ export default function Play() {
       // 23505 = PostgreSQL unique_violation: player already answered this question
       // (submitted from another tab or a previous connection).
       if (error.code === '23505') {
+        console.warn('[play] Answer already submitted (duplicate)')
         setAlreadyAnswered(true)
       } else {
+        console.error('[play] submit_answer failed:', error.message)
         setError(error.message)
       }
       return
     }
 
+    console.log('[play] Answer submitted')
     setAnswerSubmitted(true)
   }
 

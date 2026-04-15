@@ -22,6 +22,7 @@ function base64ToBlob(dataUrl) {
 }
 
 export async function exportQuiz(supabase, quizId) {
+  console.log('[export] Fetching quiz metadata…')
   const { data: quiz, error: quizErr } = await supabase
     .from('quizzes')
     .select('title, is_public')
@@ -36,14 +37,18 @@ export async function exportQuiz(supabase, quizId) {
     .order('order_index')
   if (qErr) throw new Error(qErr.message)
 
+  console.log(`[export] Exporting "${quiz.title}" — ${questions.length} question(s)`)
+
   const exportedQuestions = await Promise.all(
-    questions.map(async (q) => {
+    questions.map(async (q, i) => {
       let image_data = null
       if (q.image_url) {
+        console.log(`[export] Fetching image for question ${i + 1}/${questions.length}…`)
         try {
           image_data = await imageUrlToBase64(q.image_url)
+          console.log(`[export] Image fetched for question ${i + 1}/${questions.length}`)
         } catch {
-          // silently skip — image_data stays null
+          console.warn(`[export] Failed to fetch image for question ${i + 1}/${questions.length}, skipping`)
         }
       }
       return {
@@ -59,6 +64,7 @@ export async function exportQuiz(supabase, quizId) {
     })
   )
 
+  console.log('[export] Done')
   return JSON.stringify(
     {
       version: 1,
@@ -84,10 +90,13 @@ export async function importQuiz(supabase, userId, jsonString) {
     throw new Error('Invalid quiz file format')
   }
 
+  console.log(`[import] Importing "${data.title}" — ${data.questions.length} question(s)`)
+
   const questions = await Promise.all(
     data.questions.map(async (q, i) => {
       let image_url = null
       if (q.image_data) {
+        console.log(`[import] Uploading image for question ${i + 1}/${data.questions.length}…`)
         try {
           const questionId = crypto.randomUUID()
           const blob = base64ToBlob(q.image_data)
@@ -98,9 +107,12 @@ export async function importQuiz(supabase, userId, jsonString) {
           if (!error) {
             const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
             image_url = urlData.publicUrl
+            console.log(`[import] Image uploaded for question ${i + 1}/${data.questions.length}`)
+          } else {
+            console.warn(`[import] Image upload failed for question ${i + 1}/${data.questions.length}:`, error.message)
           }
-        } catch {
-          // silently skip — image_url stays null
+        } catch (err) {
+          console.warn(`[import] Image upload error for question ${i + 1}/${data.questions.length}:`, err)
         }
       }
       return {
@@ -118,6 +130,7 @@ export async function importQuiz(supabase, userId, jsonString) {
     })
   )
 
+  console.log('[import] Saving quiz to database…')
   const { error } = await supabase.rpc('save_quiz', {
     p_title: data.title,
     p_is_public: data.is_public ?? false,
@@ -125,4 +138,5 @@ export async function importQuiz(supabase, userId, jsonString) {
   })
 
   if (error) throw new Error(error.message)
+  console.log('[import] Done')
 }
