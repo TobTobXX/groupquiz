@@ -5,7 +5,7 @@
 This is a self-hostable real-time quiz platform — a better Kahoot. Read the planning documents before doing any work:
 
 - **[GOAL.md](GOAL.md)** — what we're building and for whom (player, host, quiz creator)
-- **[TECHNOLOGIES.md](TECHNOLOGIES.md)** — stack decisions and explanation if files/directories and DB schema.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — stack decisions and explanation if files/directories and DB schema.
 - **[STEPS.md](STEPS.md)** — nine incremental versions (v0.1–v0.9), each with a checklist
 - **[TODOS.md](TODOS.md)** — detailed task list for the current version being worked on
 
@@ -19,7 +19,7 @@ There are two distinct workflows. Use the right one depending on whether TODOS.m
 
 Use this when TODOS.md is stale (still shows the previous version) and needs to be recreated for the next version.
 
-1. **Read context** — read GOAL.md, TECHNOLOGIES.md, STEPS.md, and TODOS.md to orient yourself.
+1. **Read context** — read GOAL.md, ARCHITECTURE.md, STEPS.md, and TODOS.md to orient yourself.
 2. **Identify the next version** — find the first unchecked version in STEPS.md and read its description and checklist items carefully.
 3. **Read relevant code** — read all existing source files that are relevant to the upcoming version's scope.
 4. **Draft sections** — break the version's checklist into concrete, ordered implementation sections. Each section should be a logical unit of work (one screen, one feature area, one schema change, etc.).
@@ -33,7 +33,7 @@ Use this when TODOS.md is stale (still shows the previous version) and needs to 
 
 Use this at the start of each session when TODOS.md already reflects the current version.
 
-1. **Read context** — read GOAL.md, TECHNOLOGIES.md, STEPS.md, and TODOS.md to orient yourself.
+1. **Read context** — read GOAL.md, ARCHITECTURE.md, STEPS.md, and TODOS.md to orient yourself.
 2. **Analyse the next section** — identify what the next unchecked section in TODOS.md requires.
 3. **Read relevant code** — read whichever existing files are relevant to the upcoming work.
 4. **Anticipate challenges** — identify anything that could go wrong, ambiguities in the spec, discrepancies between existing code and the plan, or external dependencies that need user action.
