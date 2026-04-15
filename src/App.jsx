@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Home from './pages/Home'
 import Host from './pages/Host'
@@ -44,13 +44,21 @@ function AppRoutes() {
   )
 }
 
+function VersionBadge() {
+  const { pathname } = useLocation()
+  if (pathname === '/play' || pathname === '/host') return null
+  return (
+    <div className="fixed bottom-2 left-3 text-xs text-gray-400 select-none pointer-events-none">
+      {__APP_VERSION__}
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <AppRoutes />
-      <div className="fixed bottom-2 left-3 text-xs text-gray-400 select-none pointer-events-none">
-        {__APP_VERSION__}
-      </div>
+      <VersionBadge />
     </AuthProvider>
   )
 }
