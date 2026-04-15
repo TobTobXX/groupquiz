@@ -33,4 +33,5 @@ Items deferred to a later version. The version marker indicates the earliest poi
 - Question with 0 points or no right/wrong
 - Pro/paid users users. They can upload images.
 - Profile view, quizzes form profile.
+- Migrate to PocketBase to save on hosting costs?
 
