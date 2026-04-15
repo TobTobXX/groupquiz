@@ -33,25 +33,30 @@ function loadImage(file) {
   })
 }
 
+async function sha256Hex(blob) {
+  const buf = await blob.arrayBuffer()
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hashBuf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 /**
  * Given an image File, resizes it to fit within MAX_WIDTH × MAX_HEIGHT,
  * encodes it as JPEG, uploads it to the 'images' Supabase bucket, and
  * returns the public URL.
  *
- * Path: {userId}/{questionId}.jpg — uploading again overwrites the previous
- * version (upsert: true).
+ * Path: {userId}/{imgHash}.jpg — images are deduplicated by content hash.
  *
  * @param {import('@supabase/supabase-js').SupabaseClient} supabase
  * @param {File} file  — any browser-readable image file
  * @param {string} userId
- * @param {string} questionId
+ * @param {string} _questionId  (unused, kept for signature compatibility)
  * @returns {Promise<string>} public URL of the uploaded image
  */
 const SMALL_JPEG_THRESHOLD = 150 * 1024 // 150 KiB
 
-export async function processAndUploadImage(supabase, file, userId, questionId) {
-  const path = `${userId}/${questionId}.jpg`
-
+export async function processAndUploadImage(supabase, file, userId, _questionId) {
   console.log('[image] Processing image…')
   const img = await loadImage(file)
 
@@ -75,6 +80,9 @@ export async function processAndUploadImage(supabase, file, userId, questionId) 
 
     blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
   }
+
+  const imgHash = await sha256Hex(blob)
+  const path = `${userId}/${imgHash}.jpg`
 
   console.log(`[image] Uploading to storage (${(blob.size / 1024).toFixed(1)} KiB)…`)
   const { error } = await supabase.storage

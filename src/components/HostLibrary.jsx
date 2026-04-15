@@ -17,7 +17,7 @@ function PlaceholderThumb() {
   )
 }
 
-function QuizCard({ quiz, isOwn, starred, onHost, onEdit, onExport, onDelete, onStar, exporting, deleting, user }) {
+function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onDelete, onStar, exporting, deleting, user }) {
   const thumb = quiz.questions?.[0]?.image_url
 
   return (
