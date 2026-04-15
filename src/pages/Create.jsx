@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -25,27 +25,73 @@ function blankQuestion() {
 
 export default function Create() {
   const [searchParams] = useSearchParams()
-  const quizId = searchParams.get('quizId')
+  const urlQuizId = searchParams.get('quizId')
   const { user } = useAuth()
   const navigate = useNavigate()
-  const isEditMode = Boolean(quizId)
+
+  // effectiveQuizId: null until first save (create mode), then the DB quiz ID.
+  // Starts from the URL param so edit mode works on page load.
+  const [effectiveQuizId, setEffectiveQuizId] = useState(urlQuizId)
+  const effectiveQuizIdRef = useRef(urlQuizId)
 
   const [title, setTitle] = useState('')
   const [isPublic, setIsPublic] = useState(false)
   const [questions, setQuestions] = useState([blankQuestion()])
   const [isPro, setIsPro] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(isEditMode)
+  const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'saved' | 'error'
+  const [loading, setLoading] = useState(Boolean(urlQuizId))
   const [authError, setAuthError] = useState(null)
-  const [errors, setErrors] = useState({})
+  const [imageErrors, setImageErrors] = useState({})
+  const [submitError, setSubmitError] = useState(null)
 
+  const isSavingRef = useRef(false)
+  const autoSaveTimerRef = useRef(null)
+  const skipReloadRef = useRef(false)
+
+  // Auto-save must NOT fire immediately after loading edit-mode data. We gate on
+  // this ref. Create mode starts ready; edit mode starts not ready and becomes ready
+  // once loading finishes. The auto-save effect MUST be defined before the effect
+  // that sets this ref to true, so React runs auto-save first in the same flush
+  // (and still sees false), then the second effect flips it to true.
+  const readyForAutoSave = useRef(!urlQuizId)
+
+  // Keep effectiveQuizIdRef in sync so performSave always reads the latest value.
   useEffect(() => {
-    if (!isEditMode || !quizId) return
+    effectiveQuizIdRef.current = effectiveQuizId
+  }, [effectiveQuizId])
+
+  // Auto-save — debounced 800 ms after any change.
+  // Defined BEFORE the readyForAutoSave effect intentionally (see comment above).
+  useEffect(() => {
+    if (!readyForAutoSave.current) return
+    if (!title.trim()) return
+
+    // Capture current values so the timer closure uses them even if state updates later.
+    const t = title
+    const p = isPublic
+    const q = questions
+
+    clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = setTimeout(() => performSave(t, p, q), 800)
+
+    return () => clearTimeout(autoSaveTimerRef.current)
+  }, [title, isPublic, questions]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Flip readyForAutoSave once initial loading is done.
+  // Defined AFTER the auto-save effect so it runs after in the same flush.
+  useEffect(() => {
+    if (!loading) readyForAutoSave.current = true
+  }, [loading])
+
+  // Load quiz data when editing an existing quiz.
+  useEffect(() => {
+    if (!urlQuizId) return
+    if (skipReloadRef.current) return
 
     supabase
       .from('quizzes')
       .select('id, title, creator_id, is_public')
-      .eq('id', quizId)
+      .eq('id', urlQuizId)
       .single()
       .then(({ data, error }) => {
         if (error || !data) {
@@ -53,7 +99,6 @@ export default function Create() {
           setLoading(false)
           return
         }
-        // Belt-and-suspenders ownership check before RLS is tightened in v0.8.
         if (data.creator_id !== user.id) {
           setAuthError('You do not have permission to edit this quiz.')
           setLoading(false)
@@ -65,7 +110,7 @@ export default function Create() {
         supabase
           .from('questions')
           .select('id, order_index, question_text, time_limit, points, image_url, answers(id, order_index, answer_text, is_correct)')
-          .eq('quiz_id', quizId)
+          .eq('quiz_id', urlQuizId)
           .order('order_index')
           .then(({ data: qs, error: qErr }) => {
             if (qErr) {
@@ -95,7 +140,7 @@ export default function Create() {
             setLoading(false)
           })
       })
-  }, [quizId, isEditMode, user.id])
+  }, [urlQuizId, user.id])
 
   useEffect(() => {
     supabase
@@ -114,7 +159,7 @@ export default function Create() {
       const url = await processAndUploadImage(supabase, file, user.id, question.id)
       updateQuestion(questionIndex, { ...question, image_url: url })
     } catch (err) {
-      setErrors((prev) => ({ ...prev, [`q${questionIndex}_image`]: err.message }))
+      setImageErrors((prev) => ({ ...prev, [questionIndex]: err.message }))
     }
   }
 
@@ -130,21 +175,8 @@ export default function Create() {
     setQuestions((qs) => [...qs, blankQuestion()])
   }
 
-  function validate() {
-    const errs = {}
-    if (!title.trim()) errs.title = 'Quiz title is required'
-    questions.forEach((q, i) => {
-      if (!q.question_text.trim()) errs[`q${i}_text`] = 'Question text is required'
-      const filledAnswers = q.answers.filter((a) => a.answer_text.trim())
-      if (filledAnswers.length < 2) errs[`q${i}_answers`] = 'At least 2 answer options required'
-      if (!q.answers.some((a) => a.is_correct)) errs[`q${i}_correct`] = 'Mark at least one correct answer'
-    })
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  async function handleCreate() {
-    const questionsPayload = questions.map((q, i) => ({
+  function buildQuestionsPayload(qs) {
+    return qs.map((q, i) => ({
       order_index: i,
       question_text: q.question_text.trim(),
       time_limit: q.time_limit,
@@ -156,124 +188,120 @@ export default function Create() {
         is_correct: a.is_correct,
       })),
     }))
-
-    console.log(`[create] Saving quiz "${title.trim()}" (${questions.length} question(s))…`)
-    const { error } = await supabase.rpc('save_quiz', {
-      p_title: title.trim(),
-      p_is_public: isPublic,
-      p_questions: questionsPayload,
-    })
-
-    if (error) {
-      console.error('[create] save_quiz failed:', error.message)
-      setErrors({ submit: error.message ?? 'Failed to save quiz' })
-      setSaving(false)
-      return
-    }
-
-    console.log('[create] Quiz saved')
-    navigate('/host')
   }
 
-  // Edit path: upsert questions/answers one-by-one so we can diff against the DB
-  // and issue explicit deletes for rows the user removed. A bulk replace would require
-  // cascade deletes + re-inserts, which would break foreign-key references mid-flight.
-  async function handleEdit() {
-    console.log(`[edit] Saving quiz "${title.trim()}" (${questions.length} question(s))…`)
-    const { error: quizError } = await supabase
-      .from('quizzes')
-      .update({ title: title.trim(), is_public: isPublic })
-      .eq('id', quizId)
-    if (quizError) {
-      console.error('[edit] Quiz update failed:', quizError.message)
-      setErrors({ submit: quizError.message })
-      setSaving(false)
-      return
-    }
+  async function performSave(currentTitle, currentIsPublic, currentQuestions) {
+    if (!currentTitle.trim()) return false
+    if (isSavingRef.current) return false
+    isSavingRef.current = true
+    setSaveStatus('saving')
+    setSubmitError(null)
 
-    const { data: existingQs, error: fetchErr } = await supabase
-      .from('questions')
-      .select('id')
-      .eq('quiz_id', quizId)
-    if (fetchErr) {
-      console.error('[edit] Failed to fetch existing questions:', fetchErr.message)
-      setErrors({ submit: fetchErr.message })
-      setSaving(false)
-      return
-    }
-    const existingQIds = new Set(existingQs.map((q) => q.id))
+    const quizIdToUse = effectiveQuizIdRef.current
 
-    for (const qid of existingQIds) {
-      if (!questions.find((q) => q.id === qid)) {
-        console.log('[edit] Deleting removed question', qid)
-        await supabase.from('questions').delete().eq('id', qid)
-      }
-    }
-
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i]
-      console.log(`[edit] Upserting question ${i + 1}/${questions.length}…`)
-      const { data: qData, error: qErr } = await supabase
-        .from('questions')
-        .upsert({
-          id: q.id,
-          quiz_id: quizId,
-          order_index: i,
-          question_text: q.question_text.trim(),
-          time_limit: q.time_limit,
-          points: q.points,
-          image_url: q.image_url.trim() || null,
+    try {
+      if (!quizIdToUse) {
+        // Create mode: create the full quiz in one RPC call.
+        const { data: newId, error } = await supabase.rpc('save_quiz', {
+          p_title: currentTitle.trim(),
+          p_is_public: currentIsPublic,
+          p_questions: buildQuestionsPayload(currentQuestions),
         })
-        .select('id')
-      if (qErr) {
-        console.error(`[edit] Question ${i + 1} upsert failed:`, qErr.message)
-        setErrors({ submit: qErr.message })
-        setSaving(false)
-        return
-      }
+        if (error) throw new Error(error.message)
 
-      const newQId = qData[0].id
-      const { data: existingAs } = await supabase
-        .from('answers')
-        .select('id')
-        .eq('question_id', newQId)
-      const existingAIds = new Set(existingAs.map((a) => a.id))
+        // Update URL to edit mode without re-triggering the data load effect.
+        skipReloadRef.current = true
+        effectiveQuizIdRef.current = newId
+        setEffectiveQuizId(newId)
+        navigate(`/create?quizId=${newId}`, { replace: true })
+      } else {
+        // Edit mode: diff-and-upsert so we can handle deletions without breaking FK refs.
+        const { error: quizError } = await supabase
+          .from('quizzes')
+          .update({ title: currentTitle.trim(), is_public: currentIsPublic })
+          .eq('id', quizIdToUse)
+        if (quizError) throw new Error(quizError.message)
 
-      for (const aid of existingAIds) {
-        if (!q.answers.find((a) => a.id === aid)) {
-          console.log('[edit] Deleting removed answer', aid)
-          await supabase.from('answers').delete().eq('id', aid)
+        const { data: existingQs, error: fetchErr } = await supabase
+          .from('questions')
+          .select('id')
+          .eq('quiz_id', quizIdToUse)
+        if (fetchErr) throw new Error(fetchErr.message)
+
+        const existingQIds = new Set(existingQs.map((q) => q.id))
+
+        for (const qid of existingQIds) {
+          if (!currentQuestions.find((q) => q.id === qid)) {
+            await supabase.from('questions').delete().eq('id', qid)
+          }
+        }
+
+        for (let i = 0; i < currentQuestions.length; i++) {
+          const q = currentQuestions[i]
+          const { data: qData, error: qErr } = await supabase
+            .from('questions')
+            .upsert({
+              id: q.id,
+              quiz_id: quizIdToUse,
+              order_index: i,
+              question_text: q.question_text.trim(),
+              time_limit: q.time_limit,
+              points: q.points,
+              image_url: q.image_url.trim() || null,
+            })
+            .select('id')
+          if (qErr) throw new Error(qErr.message)
+
+          const newQId = qData[0].id
+          const { data: existingAs } = await supabase
+            .from('answers')
+            .select('id')
+            .eq('question_id', newQId)
+          const existingAIds = new Set(existingAs.map((a) => a.id))
+
+          for (const aid of existingAIds) {
+            if (!q.answers.find((a) => a.id === aid)) {
+              await supabase.from('answers').delete().eq('id', aid)
+            }
+          }
+
+          for (let ai = 0; ai < q.answers.length; ai++) {
+            const a = q.answers[ai]
+            await supabase.from('answers').upsert({
+              id: a.id,
+              question_id: newQId,
+              order_index: ai,
+              answer_text: a.answer_text.trim(),
+              is_correct: a.is_correct,
+            })
+          }
         }
       }
 
-      for (let ai = 0; ai < q.answers.length; ai++) {
-        const a = q.answers[ai]
-        await supabase.from('answers').upsert({
-          id: a.id,
-          question_id: newQId,
-          order_index: ai,
-          answer_text: a.answer_text.trim(),
-          is_correct: a.is_correct,
-        })
-      }
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus((s) => (s === 'saved' ? 'idle' : s)), 2000)
+      return true
+    } catch (err) {
+      console.error('[save] Error:', err.message)
+      setSubmitError(err.message ?? 'Failed to save')
+      setSaveStatus('error')
+      return false
+    } finally {
+      isSavingRef.current = false
     }
-
-    console.log('[edit] Done')
-    navigate('/host')
   }
 
   async function handleSave() {
-    if (!validate()) return
-    setSaving(true)
-    if (isEditMode) await handleEdit()
-    else await handleCreate()
+    // Cancel pending auto-save and run immediately.
+    clearTimeout(autoSaveTimerRef.current)
+    await performSave(title, isPublic, questions)
   }
 
   async function handleDelete() {
     if (!confirm('Delete this quiz? This cannot be undone.')) return
-    const { error } = await supabase.from('quizzes').delete().eq('id', quizId)
+    const { error } = await supabase.from('quizzes').delete().eq('id', effectiveQuizId)
     if (!error) navigate('/library')
-    else setErrors({ submit: error.message })
+    else setSubmitError(error.message)
   }
 
   if (loading) {
@@ -294,6 +322,9 @@ export default function Create() {
       </div>
     )
   }
+
+  const isEditMode = Boolean(effectiveQuizId)
+  const titleEmpty = !title.trim()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -316,10 +347,11 @@ export default function Create() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={`w-full bg-white border rounded-lg px-4 py-3 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              titleEmpty ? 'border-red-400' : 'border-gray-300'
+            }`}
             placeholder="My awesome quiz"
           />
-          {errors.title && <p className="text-red-400 text-sm">{errors.title}</p>}
         </div>
 
         <label className="flex items-center gap-3 cursor-pointer">
@@ -346,13 +378,8 @@ export default function Create() {
                 isPro={isPro}
                 onImageUpload={(file) => handleImageUpload(i, file)}
               />
-              {(errors[`q${i}_text`] || errors[`q${i}_answers`] || errors[`q${i}_correct`] || errors[`q${i}_image`]) && (
-                <div className="mt-1 flex flex-col gap-0.5">
-                  {errors[`q${i}_text`] && <p className="text-red-400 text-sm">{errors[`q${i}_text`]}</p>}
-                  {errors[`q${i}_answers`] && <p className="text-red-400 text-sm">{errors[`q${i}_answers`]}</p>}
-                  {errors[`q${i}_correct`] && <p className="text-red-400 text-sm">{errors[`q${i}_correct`]}</p>}
-                  {errors[`q${i}_image`] && <p className="text-red-400 text-sm">Image upload failed: {errors[`q${i}_image`]}</p>}
-                </div>
+              {imageErrors[i] && (
+                <p className="mt-1 text-red-400 text-sm">Image upload failed: {imageErrors[i]}</p>
               )}
             </div>
           ))}
@@ -366,15 +393,21 @@ export default function Create() {
           + Add question
         </button>
 
-        {errors.submit && <p className="text-red-400 text-sm">{errors.submit}</p>}
+        {submitError && <p className="text-red-400 text-sm">{submitError}</p>}
 
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saveStatus === 'saving' || titleEmpty}
           className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
         >
-          {saving ? 'Saving…' : isEditMode ? 'Save changes' : 'Save quiz'}
+          {saveStatus === 'saving'
+            ? 'Saving…'
+            : saveStatus === 'saved'
+            ? 'Saved ✓'
+            : isEditMode
+            ? 'Save changes'
+            : 'Save quiz'}
         </button>
 
         {isEditMode && (
