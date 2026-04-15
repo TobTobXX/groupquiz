@@ -47,21 +47,35 @@ function loadImage(file) {
  * @param {string} questionId
  * @returns {Promise<string>} public URL of the uploaded image
  */
+const SMALL_JPEG_THRESHOLD = 150 * 1024 // 150 KiB
+
 export async function processAndUploadImage(supabase, file, userId, questionId) {
+  const path = `${userId}/${questionId}.jpg`
+
   console.log('[image] Processing image…')
   const img = await loadImage(file)
 
-  const { w, h } = scaledDimensions(img.naturalWidth, img.naturalHeight)
-  console.log(`[image] Resizing to ${w}×${h} and encoding as JPEG…`)
+  let blob
+  if (
+    file.type === 'image/jpeg' &&
+    file.size < SMALL_JPEG_THRESHOLD &&
+    img.naturalWidth <= MAX_WIDTH &&
+    img.naturalHeight <= MAX_HEIGHT
+  ) {
+    console.log('[image] Small JPEG within dimensions — skipping transform, uploading as-is…')
+    blob = file
+  } else {
+    const { w, h } = scaledDimensions(img.naturalWidth, img.naturalHeight)
+    console.log(`[image] Resizing to ${w}×${h} and encoding as JPEG…`)
 
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h)
 
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
+    blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
+  }
 
-  const path = `${userId}/${questionId}.jpg`
   console.log(`[image] Uploading to storage (${(blob.size / 1024).toFixed(1)} KiB)…`)
   const { error } = await supabase.storage
     .from('images')

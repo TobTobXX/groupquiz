@@ -1,4 +1,5 @@
 import { byOrderIndex } from './utils'
+import { processAndUploadImage } from './imageUpload'
 
 async function imageUrlToBase64(url) {
   const resp = await fetch(url)
@@ -100,17 +101,8 @@ export async function importQuiz(supabase, userId, jsonString) {
         try {
           const questionId = crypto.randomUUID()
           const blob = base64ToBlob(q.image_data)
-          const path = `${userId}/${questionId}.jpg`
-          const { error } = await supabase.storage
-            .from('images')
-            .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-          if (!error) {
-            const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
-            image_url = urlData.publicUrl
-            console.log(`[import] Image uploaded for question ${i + 1}/${data.questions.length}`)
-          } else {
-            console.warn(`[import] Image upload failed for question ${i + 1}/${data.questions.length}:`, error.message)
-          }
+          image_url = await processAndUploadImage(supabase, blob, userId, questionId)
+          console.log(`[import] Image uploaded for question ${i + 1}/${data.questions.length}`)
         } catch (err) {
           console.warn(`[import] Image upload error for question ${i + 1}/${data.questions.length}:`, err)
         }
