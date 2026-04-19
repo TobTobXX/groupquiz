@@ -3,8 +3,6 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const PRICE_ID = 'price_1TNyDcCvpz2eeScnkE4VutU2'
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type',
@@ -14,6 +12,18 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+
+  // Initialise Stripe inside the handler so a missing secret produces a clear
+  // JSON error instead of a module-level crash that kills even CORS preflight.
+  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
+  if (!stripeKey) {
+    console.error('[checkout] STRIPE_SECRET_KEY is not set')
+    return new Response(
+      JSON.stringify({ error: 'STRIPE_SECRET_KEY not configured' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
+  }
+  const stripe = new Stripe(stripeKey)
 
   // Authenticate user from their JWT
   const authHeader = req.headers.get('Authorization')
