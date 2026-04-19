@@ -9,6 +9,7 @@ export default {
     donateTitle: 'Donate (coming soon)',
   },
   header: {
+    browse: 'Browse',
     library: 'Library',
     login: 'Log in',
     create: 'Create',
@@ -114,6 +115,11 @@ export default {
     noAnswers: 'No answers',
     avgTime: 'Avg {time}s',
     noPlayers: 'No players.',
+  },
+  browse: {
+    publicQuizzes: 'Public Quizzes',
+    search: 'Search…',
+    noPublicQuizzes: 'No public quizzes found.',
   },
   hostLibrary: {
     createNew: '+ Create a new quiz',

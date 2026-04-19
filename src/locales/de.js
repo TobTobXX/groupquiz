@@ -9,6 +9,7 @@ export default {
     donateTitle: 'Spenden (demnächst)',
   },
   header: {
+    browse: 'Stöbern',
     library: 'Bibliothek',
     login: 'Anmelden',
     create: 'Erstellen',
@@ -114,6 +115,11 @@ export default {
     noAnswers: 'Keine Antworten',
     avgTime: 'Ø {time}s',
     noPlayers: 'Keine Spieler.',
+  },
+  browse: {
+    publicQuizzes: 'Öffentliche Quizze',
+    search: 'Suchen…',
+    noPublicQuizzes: 'Keine öffentlichen Quizze gefunden.',
   },
   hostLibrary: {
     createNew: '+ Neues Quiz erstellen',

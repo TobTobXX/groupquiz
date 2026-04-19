@@ -17,7 +17,13 @@ export default function Header() {
         Kbns
       </Link>
       <Link
-        to="/host"
+        to="/browse"
+        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+      >
+        {t('header.browse')}
+      </Link>
+      <Link
+        to="/library"
         className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
         {t('header.library')}

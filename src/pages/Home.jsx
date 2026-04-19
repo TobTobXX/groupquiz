@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
+import { useAuth } from '../context/AuthContext'
 import { useI18n, SUPPORTED_LANGS, LANG_NAMES } from '../context/I18nContext'
 
 export default function Home() {
@@ -9,6 +10,7 @@ export default function Home() {
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { t, lang, setLang } = useI18n()
 
   async function handleSubmit(e) {
@@ -69,7 +71,7 @@ export default function Home() {
         <div className="flex flex-col items-center gap-6">
           <h1 className="text-5xl font-bold text-center">Kahoot but not shit</h1>
           <button
-            onClick={() => navigate('/host')}
+            onClick={() => navigate(user ? '/library' : '/browse')}
             className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3 rounded-xl text-lg transition-colors"
           >
             {t('home.hostGame')}
