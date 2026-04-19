@@ -143,7 +143,7 @@ MODEL_VERSION is what model YOU are (eg. "Claude Sonnet 4.6", "Minimax M2.7", "G
 
 ### Supabase Edge Function CORS
 
-- **Always include `apikey` in `Access-Control-Allow-Headers`** — the Supabase JS client adds an `apikey` header to every request, including `functions.invoke`. Omitting it from the allowed headers list causes the CORS preflight to fail with a null status code. Correct header: `'Access-Control-Allow-Headers': 'authorization, apikey, content-type'`.
+- **Use `*` for `Access-Control-Allow-Headers`** — the Supabase JS client sends several custom headers (`apikey`, `x-client-info`, etc.) that vary by version. Listing them individually causes whack-a-mole preflight failures. Use `'Access-Control-Allow-Headers': '*'` — this is what the Supabase docs recommend for Edge Functions and works because the requests are non-credentialed (`Allow-Origin: *`).
 
 ### React patterns
 

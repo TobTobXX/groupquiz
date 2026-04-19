@@ -5,7 +5,7 @@ const PRICE_ID = 'price_1TNyDcCvpz2eeScnkE4VutU2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+  'Access-Control-Allow-Headers': '*',
 }
 
 Deno.serve(async (req) => {
