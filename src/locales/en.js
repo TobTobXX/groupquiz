@@ -155,7 +155,7 @@ export default {
     quizTitlePlaceholder: 'My awesome quiz',
     makePublic: 'Make this quiz public — anyone can browse and host it',
     language: 'Language',
-    languagePlaceholder: 'e.g. English, German…',
+    languageNone: '— not set —',
     subject: 'Subject',
     subjectPlaceholder: 'e.g. Math, History…',
     addQuestion: '+ Add question',

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { exportQuiz, importQuiz } from '../lib/quizExport'
 import Header from './Header'
-import { useI18n } from '../context/I18nContext'
+import { useI18n, LANG_NAMES } from '../context/I18nContext'
 
 function PlaceholderThumb() {
   return (
@@ -53,7 +53,7 @@ function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onD
           {(quiz.language || quiz.subject) && (
             <div className="flex flex-wrap gap-1 mt-1">
               {quiz.language && (
-                <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{quiz.language}</span>
+                <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{LANG_NAMES[quiz.language] ?? quiz.language}</span>
               )}
               {quiz.subject && (
                 <span className="text-xs bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded">{quiz.subject}</span>

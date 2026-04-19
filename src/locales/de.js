@@ -155,7 +155,7 @@ export default {
     quizTitlePlaceholder: 'Mein tolles Quiz',
     makePublic: 'Dieses Quiz öffentlich machen — jeder kann es durchsuchen und hosten',
     language: 'Sprache',
-    languagePlaceholder: 'z. B. Englisch, Deutsch…',
+    languageNone: '— nicht angegeben —',
     subject: 'Fach',
     subjectPlaceholder: 'z. B. Mathematik, Geschichte…',
     addQuestion: '+ Frage hinzufügen',

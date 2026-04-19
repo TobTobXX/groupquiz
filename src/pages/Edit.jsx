@@ -6,7 +6,7 @@ import QuestionEditor from '../components/QuestionEditor'
 import Header from '../components/Header'
 import { byOrderIndex } from '../lib/utils'
 import { processAndUploadImage } from '../lib/imageUpload'
-import { useI18n } from '../context/I18nContext'
+import { useI18n, SUPPORTED_LANGS, LANG_NAMES } from '../context/I18nContext'
 
 // crypto.randomUUID() gives each question a stable client-side ID before it's saved.
 // This ID is used as the React key and later as the upsert target when saving.
@@ -325,13 +325,16 @@ export default function Edit() {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-500 font-medium">{t('edit.language')}</label>
-            <input
-              type="text"
+            <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder={t('edit.languagePlaceholder')}
-            />
+            >
+              <option value="">{t('edit.languageNone')}</option>
+              {SUPPORTED_LANGS.map((code) => (
+                <option key={code} value={code}>{LANG_NAMES[code]}</option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm text-gray-500 font-medium">{t('edit.subject')}</label>
