@@ -6,6 +6,7 @@ import QuestionEditor from '../components/QuestionEditor'
 import Header from '../components/Header'
 import { byOrderIndex } from '../lib/utils'
 import { processAndUploadImage } from '../lib/imageUpload'
+import { useI18n } from '../context/I18nContext'
 
 // crypto.randomUUID() gives each question a stable client-side ID before it's saved.
 // This ID is used as the React key and later as the upsert target when saving.
@@ -28,6 +29,7 @@ export default function Edit() {
   const urlQuizId = searchParams.get('quizId')
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const { t } = useI18n()
 
   // effectiveQuizId: null until first save (create mode), then the DB quiz ID.
   // Starts from the URL param so edit mode works on page load.
@@ -95,12 +97,12 @@ export default function Edit() {
       .single()
       .then(({ data, error }) => {
         if (error || !data) {
-          setAuthError('Quiz not found.')
+          setAuthError(t('edit.quizNotFound'))
           setLoading(false)
           return
         }
         if (data.creator_id !== user.id) {
-          setAuthError('You do not have permission to edit this quiz.')
+          setAuthError(t('edit.noPermission'))
           setLoading(false)
           return
         }
@@ -236,7 +238,7 @@ export default function Edit() {
       return true
     } catch (err) {
       console.error('[save] Error:', err.message)
-      setSubmitError(err.message ?? 'Failed to save')
+      setSubmitError(err.message)
       setSaveStatus('error')
       return false
     } finally {
@@ -247,7 +249,7 @@ export default function Edit() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-gray-500">{t('edit.loading')}</p>
       </div>
     )
   }
@@ -271,7 +273,7 @@ export default function Edit() {
       <Header />
       <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{isEditMode ? 'Edit Quiz' : 'Create Quiz'}</h1>
+          <h1 className="text-2xl font-bold">{isEditMode ? t('edit.editQuiz') : t('edit.createQuiz')}</h1>
           <button
             type="button"
             onClick={async () => {
@@ -281,12 +283,12 @@ export default function Edit() {
             }}
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-1.5 rounded-lg transition-colors text-sm"
           >
-            Save &amp; go back
+            {t('edit.saveAndGoBack')}
           </button>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-500 font-medium">Quiz title</label>
+          <label className="text-sm text-gray-500 font-medium">{t('edit.quizTitle')}</label>
           <input
             type="text"
             value={title}
@@ -294,7 +296,7 @@ export default function Edit() {
             className={`w-full bg-white border rounded-lg px-4 py-3 text-gray-900 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
               titleEmpty ? 'border-red-400' : 'border-gray-300'
             }`}
-            placeholder="My awesome quiz"
+            placeholder={t('edit.quizTitlePlaceholder')}
           />
         </div>
 
@@ -306,7 +308,7 @@ export default function Edit() {
             className="w-4 h-4 accent-indigo-500"
           />
           <span className="text-gray-600 text-sm">
-            Make this quiz public — anyone can browse and host it
+            {t('edit.makePublic')}
           </span>
         </label>
 
@@ -323,7 +325,7 @@ export default function Edit() {
                 onImageUpload={(file) => handleImageUpload(i, file)}
               />
               {imageErrors[i] && (
-                <p className="mt-1 text-red-400 text-sm">Image upload failed: {imageErrors[i]}</p>
+                <p className="mt-1 text-red-400 text-sm">{t('edit.imageUploadFailed', { error: imageErrors[i] })}</p>
               )}
             </div>
           ))}
@@ -334,7 +336,7 @@ export default function Edit() {
           onClick={addQuestion}
           className="w-full border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-500 hover:text-gray-700 rounded-xl py-4 transition-colors font-medium"
         >
-          + Add question
+          {t('edit.addQuestion')}
         </button>
 
         {submitError && <p className="text-red-400 text-sm">{submitError}</p>}
@@ -350,12 +352,12 @@ export default function Edit() {
           className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
         >
           {saveStatus === 'saving'
-            ? 'Saving…'
+            ? t('edit.saving')
             : saveStatus === 'saved'
-            ? 'Saved ✓'
+            ? t('edit.saved')
             : isEditMode
-            ? 'Save changes'
-            : 'Save quiz'}
+            ? t('edit.saveChanges')
+            : t('edit.saveQuiz')}
         </button>
       </div>
     </div>

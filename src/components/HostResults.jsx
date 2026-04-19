@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import SlotIcon from './SlotIcon'
 import Header from './Header'
 import { SLOT_COLOR_HEX } from '../lib/slots'
+import { useI18n } from '../context/I18nContext'
 
 // Post-session results screen shown to the host when state === 'finished'.
 // Displays the final leaderboard and a per-question breakdown.
@@ -12,6 +13,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
   // Map: question_id → { slots: [...], answers: [...], playerAnswers: [...] }
   const [questionData, setQuestionData] = useState({})
   const [loading, setLoading] = useState(true)
+  const { t } = useI18n()
 
   useEffect(() => {
     async function fetchAll() {
@@ -77,7 +79,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading results…</p>
+        <p className="text-gray-500">{t('hostResults.loading')}</p>
       </div>
     )
   }
@@ -86,13 +88,13 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200">
-        <h1 className="text-xl font-bold">Game over</h1>
+        <h1 className="text-xl font-bold">{t('hostResults.gameOver')}</h1>
         <div className="flex gap-3">
           <button
             onClick={onHostAgain}
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-5 rounded-lg text-sm transition-colors"
           >
-            Host again
+            {t('hostResults.hostAgain')}
           </button>
         </div>
       </div>
@@ -101,7 +103,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
         {/* Final leaderboard */}
         <aside className="lg:w-72 xl:w-80 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto">
           <div className="px-6 py-4">
-            <h2 className="text-lg font-semibold mb-4">Leaderboard</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('hostResults.leaderboard')}</h2>
             <div className="flex flex-col gap-2">
               {leaderboard.map((player, i) => {
                 const medal = i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-amber-600' : 'text-gray-400'
@@ -118,7 +120,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                 )
               })}
               {leaderboard.length === 0 && (
-                <p className="text-gray-400 text-sm">No players.</p>
+                <p className="text-gray-400 text-sm">{t('hostResults.noPlayers')}</p>
               )}
             </div>
           </div>
@@ -126,7 +128,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
 
         {/* Per-question breakdown */}
         <main className="flex-1 overflow-y-auto px-6 py-4">
-          <h2 className="text-lg font-semibold mb-4">Per-question breakdown</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('hostResults.breakdown')}</h2>
           <div className="flex flex-col gap-6">
             {questions.map((q, qi) => {
               const { slots, answers, playerAnswers } = questionData[q.id] ?? { slots: [], answers: [], playerAnswers: [] }
@@ -165,12 +167,12 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                     <div className="flex gap-4 text-sm shrink-0">
                       {pctCorrect !== null && (
                         <span className={`font-bold ${pctCorrect >= 50 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {pctCorrect}% correct
+                          {t('hostResults.pctCorrect', { pct: pctCorrect })}
                         </span>
                       )}
-                      {pctCorrect === null && <span className="text-gray-400">No answers</span>}
+                      {pctCorrect === null && <span className="text-gray-400">{t('hostResults.noAnswers')}</span>}
                       {avgTimeS !== null && (
-                        <span className="text-gray-500">Avg {avgTimeS}s</span>
+                        <span className="text-gray-500">{t('hostResults.avgTime', { time: avgTimeS })}</span>
                       )}
                     </div>
                   </div>

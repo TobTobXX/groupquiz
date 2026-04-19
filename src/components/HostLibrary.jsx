@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { exportQuiz, importQuiz } from '../lib/quizExport'
 import Header from './Header'
+import { useI18n } from '../context/I18nContext'
 
 function PlaceholderThumb() {
   return (
@@ -17,7 +18,7 @@ function PlaceholderThumb() {
   )
 }
 
-function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onDelete, onStar, exporting, deleting, user }) {
+function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onDelete, onStar, exporting, deleting, user, t }) {
   const thumb = quiz.questions?.[0]?.image_url
 
   return (
@@ -31,7 +32,7 @@ function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onD
         {user && !isOwn && (
           <button
             onClick={onStar}
-            title={starred ? 'Unstar' : 'Star'}
+            title={starred ? t('hostLibrary.unstar') : t('hostLibrary.star')}
             className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm"
           >
             {starred
@@ -59,21 +60,21 @@ function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onD
                 to={`/edit?quizId=${quiz.id}`}
                 className="text-xs text-gray-500 hover:text-gray-900 px-2 py-1 rounded transition-colors"
               >
-                Edit
+                {t('hostLibrary.edit')}
               </Link>
               <button
                 onClick={onExport}
                 disabled={exporting}
                 className="text-xs text-gray-500 hover:text-gray-900 disabled:opacity-50 px-2 py-1 rounded transition-colors"
               >
-                {exporting ? '…' : 'Export'}
+                {exporting ? '…' : t('hostLibrary.export')}
               </button>
               <button
                 onClick={onDelete}
                 disabled={deleting}
                 className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50 px-2 py-1 rounded transition-colors"
               >
-                {deleting ? '…' : 'Delete'}
+                {deleting ? '…' : t('hostLibrary.delete')}
               </button>
             </>
           )}
@@ -81,7 +82,7 @@ function QuizCard({ quiz, isOwn, starred, onHost, onEdit: _onEdit, onExport, onD
             onClick={onHost}
             className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            Host
+            {t('hostLibrary.host')}
           </button>
         </div>
       </div>
@@ -103,6 +104,7 @@ function Section({ title, children }) {
 export default function HostLibrary() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [publicQuizzes, setPublicQuizzes] = useState([])
   const [ownQuizzes, setOwnQuizzes] = useState([])
   const [starredIds, setStarredIds] = useState(new Set())
@@ -160,7 +162,7 @@ export default function HostLibrary() {
   }
 
   async function handleDelete(quizId) {
-    if (!confirm('Delete this quiz? This cannot be undone.')) return
+    if (!confirm(t('hostLibrary.deleteConfirm'))) return
     setDeleting(quizId)
     const { error: delErr } = await supabase.from('quizzes').delete().eq('id', quizId)
     setDeleting(null)
@@ -238,7 +240,7 @@ export default function HostLibrary() {
               to='/edit'
               className='flex-1 text-center border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold py-3 rounded-xl transition-colors'
             >
-              + Create a new quiz
+              {t('hostLibrary.createNew')}
             </Link>
             <input
               ref={importInputRef}
@@ -253,20 +255,21 @@ export default function HostLibrary() {
               disabled={importing}
               className="border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {importing ? 'Importing…' : 'Import'}
+              {importing ? t('hostLibrary.importing') : t('hostLibrary.import')}
             </button>
           </div>
         )}
 
         {/* My Quizzes */}
         {ownQuizzes.length > 0 && (
-          <Section title="My Quizzes">
+          <Section title={t('hostLibrary.myQuizzes')}>
             {ownQuizzes.map((quiz) => (
               <QuizCard
                 key={quiz.id}
                 quiz={quiz}
                 isOwn
                 user={user}
+                t={t}
                 onHost={() => createSession(quiz.id)}
                 onEdit={() => {}}
                 onExport={() => handleExport(quiz)}
@@ -280,7 +283,7 @@ export default function HostLibrary() {
 
         {/* Starred Quizzes */}
         {starredQuizzes.length > 0 && (
-          <Section title="Starred">
+          <Section title={t('hostLibrary.starred')}>
             {starredQuizzes.map((quiz) => (
               <QuizCard
                 key={quiz.id}
@@ -288,6 +291,7 @@ export default function HostLibrary() {
                 isOwn={false}
                 starred
                 user={user}
+                t={t}
                 onHost={() => createSession(quiz.id)}
                 onStar={() => handleStar(quiz.id)}
               />
@@ -298,10 +302,10 @@ export default function HostLibrary() {
         {/* Search + Public Quizzes */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-4">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Public Quizzes</h2>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{t('hostLibrary.publicQuizzes')}</h2>
             <input
               type="search"
-              placeholder="Search…"
+              placeholder={t('hostLibrary.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 max-w-xs border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -316,13 +320,14 @@ export default function HostLibrary() {
                   isOwn={false}
                   starred={false}
                   user={user}
+                  t={t}
                   onHost={() => createSession(quiz.id)}
                   onStar={() => handleStar(quiz.id)}
                 />
               ))}
             </div>
           ) : (
-            !loading && <p className="text-gray-400 text-sm">No public quizzes found.</p>
+            !loading && <p className="text-gray-400 text-sm">{t('hostLibrary.noPublicQuizzes')}</p>
           )}
         </div>
       </div>

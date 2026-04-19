@@ -1,10 +1,12 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useI18n } from '../context/I18nContext'
 
 // Shared header bar — appears on all pages except Play and HostSession during active game.
 export default function Header() {
   const { user, loading, profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const { t } = useI18n()
 
   const displayName = profile?.username || user?.email
 
@@ -18,7 +20,7 @@ export default function Header() {
         to="/host"
         className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
-        Library
+        {t('header.library')}
       </Link>
 
       {/* Spacer */}
@@ -30,7 +32,7 @@ export default function Header() {
           onClick={() => navigate('/login')}
           className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
-          Log in
+          {t('header.login')}
         </button>
       )}
       {!loading && user && (
@@ -39,7 +41,7 @@ export default function Header() {
             onClick={() => navigate('/edit')}
             className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-1.5 rounded-lg transition-colors"
           >
-            Create
+            {t('header.create')}
           </button>
           <Link
             to="/profile"
@@ -51,7 +53,7 @@ export default function Header() {
             onClick={signOut}
             className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
-            Log out
+            {t('header.logout')}
           </button>
         </>
       )}

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { useI18n } from '../context/I18nContext'
 
 const MAX_VISIBLE_PLAYERS = 20
 
 // Waiting room shown before the host starts the game.
 export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, onShuffleChange, showLeaderboard, onShowLeaderboardChange, loadingSlots, onStart }) {
   const [copied, setCopied] = useState(false)
+  const { t } = useI18n()
 
   function copyCode() {
     navigator.clipboard.writeText(joinCode).then(() => {
@@ -25,9 +27,9 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
       <div className="flex flex-col items-center gap-6 text-center">
         <div>
           <p className="text-gray-500 text-lg mb-1">
-            Join at <span className="text-gray-900 font-semibold">{domain}</span>
+            {t('hostLobby.joinAt')} <span className="text-gray-900 font-semibold">{domain}</span>
           </p>
-          <p className="text-gray-500 text-sm">or enter the code below</p>
+          <p className="text-gray-500 text-sm">{t('hostLobby.orEnterCode')}</p>
         </div>
 
         {/* Clickable join code */}
@@ -40,7 +42,7 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             {copied ? 'Copied!' : joinCode}
           </span>
           <span className="text-xs text-gray-400 mt-1 group-hover:text-gray-500 transition-colors">
-            click to copy
+            {t('hostLobby.clickToCopy')}
           </span>
         </button>
 
@@ -69,7 +71,7 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             onChange={(e) => onShuffleChange(e.target.checked)}
             className="w-4 h-4 accent-indigo-500"
           />
-          Shuffle answer positions
+          {t('hostLobby.shuffleAnswers')}
         </label>
         <label className="flex items-center gap-2 text-gray-600 text-sm cursor-pointer select-none">
           <input
@@ -78,14 +80,16 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             onChange={(e) => onShowLeaderboardChange(e.target.checked)}
             className="w-4 h-4 accent-indigo-500"
           />
-          Show top 5 between questions
+          {t('hostLobby.showLeaderboard')}
         </label>
         <button
           onClick={onStart}
           disabled={loadingSlots}
           className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
         >
-          {loadingSlots ? 'Starting…' : `Start game (${players.length} player${players.length !== 1 ? 's' : ''})`}
+          {loadingSlots
+            ? t('hostLobby.starting')
+            : t('hostLobby.startGame', { count: players.length, playerWord: t(players.length === 1 ? 'common.player' : 'common.players') })}
         </button>
       </div>
 
@@ -94,8 +98,8 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
         <div className="flex items-center gap-2 text-gray-500 text-sm">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
           {players.length === 0
-            ? 'Waiting for players…'
-            : `${players.length} player${players.length !== 1 ? 's' : ''} joined`}
+            ? t('hostLobby.waitingForPlayers')
+            : t('hostLobby.playersJoined', { count: players.length, playerWord: t(players.length === 1 ? 'common.player' : 'common.players') })}
         </div>
         {visiblePlayers.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2">
@@ -109,7 +113,7 @@ export default function HostLobby({ joinCode, joinUrl, players, shuffleAnswers, 
             ))}
             {hiddenCount > 0 && (
               <span className="px-3 py-1 bg-indigo-50 text-indigo-500 text-sm rounded-full">
-                +{hiddenCount} more
+                {t('hostLobby.andMore', { count: hiddenCount })}
               </span>
             )}
           </div>

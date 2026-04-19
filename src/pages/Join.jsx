@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
+import { useI18n } from '../context/I18nContext'
 
 export default function Join() {
   const [searchParams] = useSearchParams()
@@ -12,11 +13,12 @@ export default function Join() {
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState(null)
   const [submitError, setSubmitError] = useState(null)
+  const { t } = useI18n()
 
   useEffect(() => {
     if (!code) {
       setTimeout(() => {
-        setError('No join code provided')
+        setError(t('join.noCode'))
         setChecking(false)
       }, 0)
       return
@@ -40,7 +42,7 @@ export default function Join() {
 
       if (!session) {
         console.log('[join] Session not found')
-        setError('Session not found')
+        setError(t('join.sessionNotFound'))
         setChecking(false)
         return
       }
@@ -48,7 +50,7 @@ export default function Join() {
       if (session.state === 'finished') {
         console.log('[join] Session already finished')
         if (stored) localStorage.removeItem(`player_${code}`)
-        setError('This session has ended')
+        setError(t('join.sessionEnded'))
         setChecking(false)
         return
       }
@@ -117,9 +119,9 @@ export default function Join() {
       <div className="min-h-screen flex flex-col">
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4">
-          <p className="text-red-400 text-2xl font-bold">Error</p>
+          <p className="text-red-400 text-2xl font-bold">{t('join.error')}</p>
           <p className="text-gray-600">{error}</p>
-          <a href="/" className="text-indigo-400 hover:underline text-sm">Back to home</a>
+          <a href="/" className="text-indigo-400 hover:underline text-sm">{t('join.backToHome')}</a>
         </div>
       </div>
     )
@@ -129,12 +131,12 @@ export default function Join() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center px-4">
-      <h1 className="text-3xl font-bold mb-2 text-center">Join game</h1>
+      <h1 className="text-3xl font-bold mb-2 text-center">{t('join.joinGame')}</h1>
       <p className="text-gray-500 mb-8 text-center font-mono tracking-widest">{code}</p>
       <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl p-8">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-500 font-medium">Nickname</label>
+            <label className="text-sm text-gray-500 font-medium">{t('join.nickname')}</label>
             <input
               type="text"
               value={nickname}
@@ -149,7 +151,7 @@ export default function Join() {
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition-colors"
           >
-            Join
+            {t('join.join')}
           </button>
         </form>
       </div>

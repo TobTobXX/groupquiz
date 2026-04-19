@@ -1,20 +1,24 @@
 import SlotIcon from './SlotIcon'
+import { useI18n } from '../context/I18nContext'
 
 // Shown on the player screen after a question closes: result banner,
 // slot feedback grid, and live leaderboard while waiting for next question.
 export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps, leaderboard, playerId }) {
   const playerStreak = leaderboard.find(p => p.id === playerId)?.streak ?? 0
+  const { t } = useI18n()
 
   return (
     <div className="w-full max-w-xl flex flex-col gap-4">
       {/* Result banner */}
       {isCorrect !== null ? (
         <div className={`rounded-xl px-6 py-4 text-center font-bold text-xl ${isCorrect ? 'bg-emerald-600' : 'bg-red-600'}`}>
-          {isCorrect ? <>Correct! +{pointsEarned} points{playerStreak >= 3 && <> 🔥<span className="text-orange-400 font-bold">{playerStreak}</span></>}</> : 'Wrong'}
+          {isCorrect
+            ? <>{t('feedback.correct', { points: pointsEarned })}{playerStreak >= 3 && <> 🔥<span className="text-orange-400 font-bold">{playerStreak}</span></>}</>
+            : t('feedback.wrong')}
         </div>
       ) : (
         <div className="rounded-xl px-6 py-4 text-center font-bold text-xl bg-indigo-100 text-indigo-800">
-          You didn't answer
+          {t('feedback.didntAnswer')}
         </div>
       )}
 
@@ -53,7 +57,7 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
         )
       })()}
 
-      <p className="text-gray-500 text-sm text-center">Waiting for next question…</p>
+      <p className="text-gray-500 text-sm text-center">{t('feedback.waitingNext')}</p>
     </div>
   )
 }

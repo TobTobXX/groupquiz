@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
+import { useI18n } from '../context/I18nContext'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -12,6 +13,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [sent, setSent] = useState(null)
+  const { t } = useI18n()
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -26,7 +28,7 @@ export default function Login() {
       })
       setLoading(false)
       if (error) setError(error.message)
-      else setSent('Check your email for a magic link!')
+      else setSent(t('login.magicLinkSent'))
       return
     }
 
@@ -40,7 +42,7 @@ export default function Login() {
       setLoading(false)
       if (error) setError(error.message)
       else {
-        setSent('Account created! Check your email to confirm, then sign in.')
+        setSent(t('login.accountCreated'))
         setMode('signin')
       }
     }
@@ -52,15 +54,15 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-xl p-8 flex flex-col gap-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold">Welcome</h1>
+            <h1 className="text-2xl font-bold">{t('login.welcome')}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {mode === 'signin' ? 'Sign in to your account' : 'Create an account'}
+            {mode === 'signin' ? t('login.signInSubtitle') : t('login.signUpSubtitle')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-500">Email</label>
+            <label className="text-sm text-gray-500">{t('login.email')}</label>
             <input
               type="email"
               value={email}
@@ -73,7 +75,7 @@ export default function Login() {
 
           {!magicLink && (
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-500">Password</label>
+              <label className="text-sm text-gray-500">{t('login.password')}</label>
               <input
                 type="password"
                 value={password}
@@ -94,12 +96,12 @@ export default function Login() {
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors"
           >
             {loading
-              ? 'Please wait…'
+              ? t('login.pleaseWait')
               : magicLink
-              ? 'Send magic link'
+              ? t('login.sendMagicLink')
               : mode === 'signin'
-              ? 'Sign in'
-              : 'Create account'}
+              ? t('login.signIn')
+              : t('login.createAccount')}
           </button>
         </form>
 
@@ -109,7 +111,7 @@ export default function Login() {
             onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
             className="text-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
-            {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            {mode === 'signin' ? t('login.noAccount') : t('login.haveAccount')}
           </button>
         )}
 
@@ -119,7 +121,7 @@ export default function Login() {
             onClick={() => setMagicLink((v) => !v)}
             className="text-center text-sm text-indigo-600 hover:text-indigo-500 transition-colors"
           >
-            {magicLink ? 'Use password instead' : 'Sign in with magic link'}
+            {magicLink ? t('login.usePassword') : t('login.signInMagicLink')}
           </button>
         )}
         </div>

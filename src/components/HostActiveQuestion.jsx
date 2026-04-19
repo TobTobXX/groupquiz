@@ -1,5 +1,6 @@
 import SlotIcon from './SlotIcon'
 import { SLOT_COLOR_HEX } from '../lib/slots'
+import { useI18n } from '../context/I18nContext'
 
 // Full-screen active question display with large answer buttons,
 // game code, timer, and bottom navigation controls.
@@ -19,6 +20,7 @@ export default function HostActiveQuestion({
   onNext,
   onEnd,
 }) {
+  const { t } = useI18n()
   return (
     <div className="fixed inset-0 flex flex-col bg-gray-50">
       {/* Question row: Timer left, Answer count right */}
@@ -90,7 +92,7 @@ export default function HostActiveQuestion({
         <div>
           {joinCode && (
             <div className="text-gray-500 text-2xl">
-              <span className="mr-2">Code:</span>
+              <span className="mr-2">{t('hostActive.code')}</span>
               <span className="text-gray-900 font-bold text-4xl tracking-wider">{joinCode}</span>
             </div>
           )}
@@ -102,28 +104,28 @@ export default function HostActiveQuestion({
             onClick={onClose}
             className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 px-16 rounded-lg transition-colors text-2xl"
           >
-            End Question
+            {t('hostActive.endQuestion')}
           </button>
           <button
             onClick={currentQuestionIndex >= totalQuestions - 1 ? onEnd : onNext}
             disabled={loadingSlots}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-5 px-16 rounded-lg transition-colors text-2xl"
           >
-            {loadingSlots ? '…' : 'Next Question'}
+            {loadingSlots ? '…' : t('hostActive.nextQuestion')}
           </button>
         </div>
 
         {/* Question count + fullscreen + Exit - right column */}
         <div className="flex items-center justify-end gap-4">
           <div className="text-gray-500 text-2xl whitespace-nowrap">
-            <span className="mr-2">Question:</span>
+            <span className="mr-2">{t('hostActive.question')}</span>
             <span className="text-gray-900 font-bold text-5xl">{currentQuestionIndex + 1}</span>
             <span className="text-gray-900 font-bold text-5xl"> / {totalQuestions}</span>
           </div>
           <button
             onClick={onToggleFullscreen}
             className="p-2 text-gray-500 hover:text-gray-900 transition-colors"
-            title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            title={isFullscreen ? t('hostActive.exitFullscreen') : t('hostActive.enterFullscreen')}
           >
             {isFullscreen ? (
               <svg xmlns="http://www.w3.org/2000/svg" width="43" height="43" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -139,7 +141,7 @@ export default function HostActiveQuestion({
             onClick={onEnd}
             className="bg-gray-200 hover:bg-red-600 text-gray-800 hover:text-white font-semibold py-5 px-8 rounded-lg transition-colors text-2xl"
           >
-            Exit
+            {t('hostActive.exit')}
           </button>
         </div>
       </div>

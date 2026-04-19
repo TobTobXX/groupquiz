@@ -5,11 +5,13 @@ import SlotIcon from '../components/SlotIcon'
 import FeedbackView from '../components/FeedbackView'
 import { SLOT_COLOR_HEX } from '../lib/slots'
 import { byOrderIndex } from '../lib/utils'
+import { useI18n } from '../context/I18nContext'
 
 export default function Play() {
   const [searchParams] = useSearchParams()
   const code = searchParams.get('code')
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [nickname, setNickname] = useState(null)
   const [sessionId, setSessionId] = useState(null)
   const [sessionState, setSessionState] = useState(null)
@@ -96,7 +98,7 @@ export default function Play() {
   useEffect(() => {
     async function loadSession() {
       if (!code) {
-        setError('No join code provided')
+        setError(t('play.noCode'))
         return
       }
 
@@ -107,7 +109,7 @@ export default function Play() {
         .single()
 
       if (sessionError || !session) {
-        setError('Session not found')
+        setError(t('play.sessionNotFound'))
         return
       }
 
@@ -338,7 +340,7 @@ export default function Play() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <p className="text-red-400 text-2xl font-bold mb-2">Error</p>
+        <p className="text-red-400 text-2xl font-bold mb-2">{t('play.error')}</p>
         <p className="text-gray-600">{error}</p>
       </div>
     )
@@ -364,7 +366,7 @@ export default function Play() {
       {/* Top bar */}
       <div className="px-4 py-3 border-b border-gray-200">
         <p className="text-sm text-gray-500">
-          Playing as <strong className="text-gray-900">{nickname}</strong>
+          {t('play.playingAs')} <strong className="text-gray-900">{nickname}</strong>
         </p>
       </div>
 
@@ -374,7 +376,7 @@ export default function Play() {
         {/* Waiting */}
         {sessionState === 'waiting' && (
           <div className="flex flex-col items-center gap-4">
-            <p className="text-2xl font-semibold text-center">Waiting for the host to start…</p>
+            <p className="text-2xl font-semibold text-center">{t('play.waitingForHost')}</p>
             <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
           </div>
         )}
@@ -383,8 +385,8 @@ export default function Play() {
         {sessionState === 'finished' && (
           <div className="w-full max-w-sm flex flex-col gap-4">
             <div className="text-center">
-              <p className="text-4xl font-bold">Game over</p>
-              <p className="text-gray-600 mt-1">Thanks for playing, <strong>{nickname}</strong>!</p>
+              <p className="text-4xl font-bold">{t('play.gameOver')}</p>
+              <p className="text-gray-600 mt-1">{t('play.thanksForPlaying', { nickname })}</p>
             </div>
             {leaderboard.length > 0 && (
               <div className="flex flex-col gap-2">
@@ -405,7 +407,7 @@ export default function Play() {
               onClick={() => navigate('/')}
               className="text-indigo-600 hover:text-indigo-500 text-sm transition-colors text-center"
             >
-              Back to home
+              {t('play.backToHome')}
             </button>
           </div>
         )}
@@ -413,7 +415,7 @@ export default function Play() {
         {/* Active but past last question */}
         {sessionState === 'active' && !question && !feedbackShown && (
           <div className="flex flex-col items-center gap-4">
-            <p className="text-2xl font-semibold text-center">Waiting for the game to end…</p>
+            <p className="text-2xl font-semibold text-center">{t('play.waitingForEnd')}</p>
             <div className="w-2 h-2 rounded-full bg-gray-500 animate-pulse" />
           </div>
         )}
@@ -450,10 +452,10 @@ export default function Play() {
               })}
             </div>
             {answerSubmitted && (
-              <p className="text-center text-gray-500 text-sm">Answer submitted</p>
+              <p className="text-center text-gray-500 text-sm">{t('play.answerSubmitted')}</p>
             )}
             {alreadyAnswered && (
-              <p className="text-center text-gray-500 text-sm">You already answered this question</p>
+              <p className="text-center text-gray-500 text-sm">{t('play.alreadyAnswered')}</p>
             )}
           </div>
         )}

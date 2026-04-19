@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useI18n } from '../context/I18nContext'
 import HostLobby from './HostLobby'
 import HostActiveQuestion from './HostActiveQuestion'
 import HostQuestionReview from './HostQuestionReview'
@@ -12,6 +13,7 @@ import { byOrderIndex } from '../lib/utils'
 // question display, and the finished state.
 export default function HostSession({ sessionId }) {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [joinCode, setJoinCode] = useState(null)
   const [quizId, setQuizId] = useState(null)
   const [sessionState, setSessionState] = useState('waiting')
@@ -62,7 +64,7 @@ export default function HostSession({ sessionId }) {
       .single()
       .then(({ data, error: err }) => {
         if (err) {
-          setError('Session not found')
+          setError(t('hostSession.sessionNotFound'))
           setLoading(false)
           return
         }
@@ -269,7 +271,7 @@ export default function HostSession({ sessionId }) {
       .order('order_index')
     const sortedQs = qs ? qs.map((q) => ({ ...q, answers: [...q.answers].sort(byOrderIndex) })) : []
     const firstQuestionId = sortedQs[0]?.id
-    if (!firstQuestionId) { setError('No questions found'); return }
+    if (!firstQuestionId) { setError(t('hostSession.noQuestions')); return }
 
     console.log(`[host] Starting game (${sortedQs.length} question(s), shuffle=${shuffleAnswers})…`)
     setLoadingSlots(true)
@@ -341,7 +343,7 @@ export default function HostSession({ sessionId }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-gray-500">{t('hostSession.loading')}</p>
       </div>
     )
   }

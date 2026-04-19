@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
+import { useI18n, SUPPORTED_LANGS } from '../context/I18nContext'
 
 export default function Home() {
   const [code, setCode] = useState('')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+  const { t, lang, setLang } = useI18n()
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -21,7 +23,7 @@ export default function Home() {
       .single()
 
     if (sessionError || !session) {
-      setError('Session not found')
+      setError(t('home.sessionNotFound'))
       return
     }
 
@@ -70,18 +72,18 @@ export default function Home() {
             onClick={() => navigate('/host')}
             className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3 rounded-xl text-lg transition-colors"
           >
-            Host a game
+            {t('home.hostGame')}
           </button>
         </div>
 
         {/* Join section */}
         <div className="w-full max-w-sm flex flex-col gap-4">
-          <h2 className="text-gray-500 text-sm font-semibold uppercase tracking-wider text-center">Join via code</h2>
+          <h2 className="text-gray-500 text-sm font-semibold uppercase tracking-wider text-center">{t('home.joinViaCode')}</h2>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
               type="text"
               maxLength={6}
-              placeholder="Join code"
+              placeholder={t('home.joinCodePlaceholder')}
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               required
@@ -89,7 +91,7 @@ export default function Home() {
             />
             <input
               type="text"
-              placeholder="Nickname"
+              placeholder={t('home.nicknamePlaceholder')}
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               required
@@ -100,7 +102,7 @@ export default function Home() {
               type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition-colors"
             >
-              Join
+              {t('home.join')}
             </button>
           </form>
         </div>
@@ -108,21 +110,31 @@ export default function Home() {
 
       {/* Bottom right footer */}
       <div className='fixed bottom-4 right-4 flex items-center gap-3'>
+        {SUPPORTED_LANGS.map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            className={`text-sm transition-colors ${lang === l ? 'text-gray-900 font-semibold' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            {l.toUpperCase()}
+          </button>
+        ))}
+        <span className='text-gray-300'>|</span>
         <a
           href='https://codeberg.org/TobTobXX/kahoot-but-not-shit'
           target='_blank'
           rel='noopener noreferrer'
           className='text-sm text-gray-500 hover:text-gray-700 transition-colors'
         >
-          Source
+          {t('footer.source')}
         </a>
         <span className='text-gray-300'>|</span>
         <button
           disabled
           className='text-sm text-gray-400 cursor-not-allowed'
-          title='Donate (coming soon)'
+          title={t('footer.donateTitle')}
         >
-          Donate
+          {t('footer.donate')}
         </button>
       </div>
 

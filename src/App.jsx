@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { I18nProvider } from './context/I18nContext'
 import Home from './pages/Home'
 import Host from './pages/Host'
 import Play from './pages/Play'
@@ -56,9 +57,11 @@ function VersionBadge() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-      <VersionBadge />
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <AppRoutes />
+        <VersionBadge />
+      </AuthProvider>
+    </I18nProvider>
   )
 }

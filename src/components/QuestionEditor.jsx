@@ -1,4 +1,7 @@
+import { useI18n } from '../context/I18nContext'
+
 export default function QuestionEditor({ index, question, onChange, onDelete, canDelete = true, isPro = false, onImageUpload }) {
+  const { t } = useI18n()
   function update(field, value) {
     onChange({ ...question, [field]: value })
   }
@@ -34,31 +37,31 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-gray-500 text-sm font-medium">Question {index + 1}</span>
+        <span className="text-gray-500 text-sm font-medium">{t('questionEditor.question', { number: index + 1 })}</span>
           <button
             type="button"
             onClick={onDelete}
             disabled={!canDelete}
             className="text-sm text-red-400 hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            Delete
+            {t('questionEditor.delete')}
           </button>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">Question text</label>
+        <label className="text-xs text-gray-500">{t('questionEditor.questionText')}</label>
         <textarea
           value={question.question_text}
           onChange={(e) => update('question_text', e.target.value)}
           rows={2}
           className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          placeholder="Enter question..."
+          placeholder={t('questionEditor.questionTextPlaceholder')}
         />
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Time limit (s)</label>
+          <label className="text-xs text-gray-500">{t('questionEditor.timeLimit')}</label>
           <input
             type="number"
             min={5}
@@ -69,7 +72,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Points</label>
+          <label className="text-xs text-gray-500">{t('questionEditor.points')}</label>
           <input
             type="number"
             min={0}
@@ -79,7 +82,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Image</label>
+          <label className="text-xs text-gray-500">{t('questionEditor.image')}</label>
           {isPro ? (
             <input
               key="file"
@@ -116,7 +119,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
             type={`button`}
             onClick={() => update('image_url', '')}
             className={`absolute top-2 right-2 bg-white/90 hover:bg-white text-red-500 hover:text-red-600 rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow transition-colors`}
-            title={`Remove image`}
+            title={t('questionEditor.removeImage')}
           >
             ✕
           </button>
@@ -124,7 +127,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
       )}
 
       <div className="flex flex-col gap-2">
-        <label className="text-xs text-gray-500">Answer options</label>
+        <label className="text-xs text-gray-500">{t('questionEditor.answerOptions')}</label>
         {question.answers.map((answer, i) => (
           <div key={answer.id} className="flex items-center gap-2">
             <input
@@ -133,7 +136,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
               checked={answer.is_correct}
               onChange={() => updateAnswer(i, 'is_correct', true)}
               className="w-4 h-4 accent-emerald-500"
-              title="Mark as correct"
+              title={t('questionEditor.markAsCorrect')}
             />
             <input
               type="text"
@@ -158,7 +161,7 @@ export default function QuestionEditor({ index, question, onChange, onDelete, ca
           disabled={question.answers.length >= 4}
           className="text-sm text-indigo-600 hover:text-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors self-start"
         >
-          + Add answer
+          {t('questionEditor.addAnswer')}
         </button>
       </div>
     </div>

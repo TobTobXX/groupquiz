@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
+import { useI18n } from '../context/I18nContext'
 
 export default function Profile() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const [username, setUsername] = useState('')
   const [isPro, setIsPro] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -40,7 +42,7 @@ export default function Profile() {
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
-      setMessage({ type: 'success', text: 'Username saved.' })
+      setMessage({ type: 'success', text: t('profile.usernameSaved') })
     }
 
     setSaving(false)
@@ -53,21 +55,21 @@ export default function Profile() {
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm flex flex-col gap-6">
 
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Profile</h1>
+          <h1 className="text-2xl font-bold text-gray-900 text-center">{t('profile.title')}</h1>
 
           {loading ? (
-            <p className="text-gray-500 text-center">Loading...</p>
+            <p className="text-gray-500 text-center">{t('profile.loading')}</p>
           ) : (
             <form onSubmit={handleSave} className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
+                  {t('profile.username')}
                 </label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Set a username"
+                  placeholder={t('profile.usernamePlaceholder')}
                   className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -83,16 +85,16 @@ export default function Profile() {
                 disabled={saving}
                 className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-colors"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? t('profile.saving') : t('profile.save')}
               </button>
             </form>
           )}
 
           <div className="border-t pt-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Pro Status</span>
+              <span className="text-sm font-medium text-gray-700">{t('profile.proStatus')}</span>
               <span className={`text-sm font-semibold px-2 py-0.5 rounded ${isPro ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
-                {isPro ? 'Pro' : 'Free'}
+                {isPro ? t('profile.pro') : t('profile.free')}
               </span>
             </div>
           </div>
