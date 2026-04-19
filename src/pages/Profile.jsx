@@ -9,6 +9,7 @@ export default function Profile() {
   const { t } = useI18n()
   const [username, setUsername] = useState('')
   const [isPro, setIsPro] = useState(false)
+  const [subscriptionPeriodEnd, setSubscriptionPeriodEnd] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
@@ -29,13 +30,14 @@ export default function Profile() {
     async function load() {
       const { data } = await supabase
         .from('profiles')
-        .select('username, is_pro')
+        .select('username, is_pro, subscription_period_end')
         .eq('id', user.id)
         .single()
 
       if (data) {
         setUsername(data.username ?? '')
         setIsPro(data.is_pro ?? false)
+        setSubscriptionPeriodEnd(data.subscription_period_end ?? null)
       }
       setLoading(false)
     }
@@ -129,7 +131,18 @@ export default function Profile() {
 
               <div className="border-t pt-6 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">{t('profile.proStatus')}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">{t('profile.proStatus')}</span>
+                    {isPro && subscriptionPeriodEnd && (
+                      <span className="text-xs text-gray-400">
+                        {t('profile.renewsOn', {
+                          date: new Date(subscriptionPeriodEnd).toLocaleDateString(undefined, {
+                            year: 'numeric', month: 'short', day: 'numeric',
+                          }),
+                        })}
+                      </span>
+                    )}
+                  </div>
                   <span className={`text-sm font-semibold px-2 py-0.5 rounded ${isPro ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                     {isPro ? t('profile.pro') : t('profile.free')}
                   </span>

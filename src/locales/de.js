@@ -154,6 +154,7 @@ export default {
     upgrading: 'Weiter zur Kasse…',
     upgradeError: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
     checkoutSuccess: 'Du bist jetzt Pro-Abonnent. Danke, dass du Kbns unterstützt!',
+    renewsOn: 'Verlängert sich am {date}',
   },
   edit: {
     loading: 'Lädt…',

@@ -95,15 +95,20 @@ Deno.serve(async (req) => {
         break
       }
 
+      // invoice.period_end is a Unix timestamp (seconds)
+      const periodEnd = invoice.period_end
+        ? new Date(invoice.period_end * 1000).toISOString()
+        : null
+
       const { error } = await supabase
         .from('profiles')
-        .update({ is_pro: true })
+        .update({ is_pro: true, subscription_period_end: periodEnd })
         .eq('id', data.id)
 
       if (error) {
         console.error(`[webhook] invoice.paid: DB update failed for user ${data.id}:`, error)
       } else {
-        console.log(`[webhook] invoice.paid: Pro confirmed for user ${data.id}`)
+        console.log(`[webhook] invoice.paid: Pro confirmed for user ${data.id}, period ends ${periodEnd}`)
       }
       break
     }
@@ -136,7 +141,7 @@ Deno.serve(async (req) => {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ is_pro: false, stripe_subscription_id: null })
+        .update({ is_pro: false, stripe_subscription_id: null, subscription_period_end: null })
         .eq('id', data.id)
 
       if (error) {

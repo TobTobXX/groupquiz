@@ -154,6 +154,7 @@ export default {
     upgrading: 'Redirecting to checkout…',
     upgradeError: 'Something went wrong. Please try again.',
     checkoutSuccess: "You're now a Pro subscriber. Thanks for supporting Kbns!",
+    renewsOn: 'Renews {date}',
   },
   edit: {
     loading: 'Loading…',
