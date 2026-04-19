@@ -6,45 +6,25 @@ This is a self-hostable real-time quiz platform — a better Kahoot. Read the pl
 
 - **[GOAL.md](GOAL.md)** — what we're building and for whom (player, host, quiz creator)
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — full architecture reference: tech stack, backend services, DB schema, file index, routing, migrations log, and quiz export format.
-- **[TASKS.md](TASKS.md)** — nine incremental versions (v0.1–v0.9), each with a checklist
+- **[TASKS.md](TASKS.md)** — Technical debt and outstanding tasks: Get a bigger view of the project trajectory
 
 Always read these files at the start of a session to orient yourself before touching any code.
 
-## Workflows
+(by the way, CLAUDE.md is just a symlink to AGENTS.md. NEVER edit CLAUDE.md.)
 
-There are two distinct workflows. Use the right one depending on whether TODOS.md already exists for the current version.
+## Workflow
 
-### Workflow A — Writing TODOS for a new version
-
-Use this when TODOS.md is stale (still shows the previous version) and needs to be recreated for the next version.
+Use this workflow when working on a feature that isn't a trivial one-line change.
 
 1. **Read context** — read GOAL.md, ARCHITECTURE.md, TASKS.md, and TODOS.md to orient yourself.
-2. **Identify the next version** — find the first unchecked version in TASKS.md and read its description and checklist items carefully.
-3. **Read relevant code** — read all existing source files that are relevant to the upcoming version's scope.
-4. **Draft sections** — break the version's checklist into concrete, ordered implementation sections. Each section should be a logical unit of work (one screen, one feature area, one schema change, etc.).
-5. **Write TODOS.md** — replace the file with the new version's task list. Each section must include:
-   - A short prose description of the goal.
-   - A `> blockquote` briefing stating: which files are relevant, specific things to watch out for (API quirks, constraints from earlier versions, ordering dependencies), and whether user action is required.
-   - A checklist of concrete, granular tasks — each task is one actionable step, not a summary.
-6. **Carry forward technical debt** — technical debt lives permanently in TASKS.md (see there), not in TODOS.md. Do not copy it into TODOS.md on each new version.
-
-### Workflow B — Implementing a section
-
-Use this at the start of each session when TODOS.md already reflects the current version.
-
-1. **Read context** — read GOAL.md, ARCHITECTURE.md, TASKS.md, and TODOS.md to orient yourself.
-2. **Analyse the next section** — identify what the next unchecked section in TODOS.md requires.
+2. **Analyse request** — identify what the user wants. Prepare questions if things are unclear.
 3. **Read relevant code** — read whichever existing files are relevant to the upcoming work.
+6. **Draft a plan of action** — concrete, ordered steps you will take. Use the todo tool.
 4. **Anticipate challenges** — identify anything that could go wrong, ambiguities in the spec, discrepancies between existing code and the plan, or external dependencies that need user action.
-5. **Write a Briefing** — summarise the section goal, the findings from step 4, and explicitly flag every point where the user is required to act (e.g. Supabase dashboard steps, credentials, manual verification).
-6. **Write a plan of action** — concrete, ordered steps you will take. Present it to the user and wait for confirmation before touching any code.
-7. **Execute** — after confirmation, work through the entire section top to bottom. Check off each task in TODOS.md immediately when done. Commit after every logical unit of work.
-8. **Review for technical debt** — after the session's work is done, reflect on anything deferred, worked around, or left imperfect. Present candidate debt items to the user and ask whether any should be added to the technical debt section of TASKS.md.
-9. **Review for lessons learned** — reflect on anything non-obvious that came up during the session (API quirks, tooling gotchas, React patterns, etc.). Present candidate lessons to the user and ask whether any should be added to the "Lessons learned" section of AGENTS.md (not CLAUDE.md — AGENTS.md is the file for this).
-
-## Current focus
-
-Work through TODOS.md top to bottom. When a task is done, check it off in TODOS.md immediately. When all tasks in a section are done, check off the corresponding item in the TASKS.md checklist for the current version.
+5. **Write a Briefing** — summarise the goal, the findings from step 4, the planned steps from step 3, and explicitly flag every point where the user is required to act (e.g. Supabase dashboard steps, credentials, manual verification).
+6. **Execute** — after confirmation, work through all todos. Commit after every logical unit of work.
+7. **Review for technical debt** — after the session's work is done, reflect on anything deferred, worked around, or left imperfect. Present candidate debt items to the user and ask whether any should be added to the technical debt section of TASKS.md.
+8. **Review for lessons learned** — reflect on anything non-obvious that came up during the session (API quirks, tooling gotchas, React patterns, etc.). Present candidate lessons to the user and ask whether any should be added to the "Lessons learned" section of AGENTS.md.
 
 ## Running tools
 
@@ -103,7 +83,7 @@ git add src/pages/Host.jsx supabase/migrations/xyz.sql
 git commit -m "short description\n\nAssisted-by: Claude Code:claude-sonnet-4-6"
 
 # For changes to already-tracked files only (no new files), shorthand:
-git commit -am "short description\n\nAssisted-by: Claude Code:claude-sonnet-4-6"
+git commit -am "short description\n\nAssisted-by: Opencode:gemma-4"
 
 # With AI attribution (use a heredoc to keep the trailer on its own line)
 # More detailed commits
@@ -116,7 +96,7 @@ In the quiz editor you can do:
  - That
 ...
 
-Assisted-by: Claude:claude-sonnet-4-6
+Assisted-by: Opencode:minimax-m2.7
 EOF
 )"
 ```
@@ -129,22 +109,19 @@ Tag each version when all boxes in TASKS.md are checked. Always pass `-m` — om
 git tag v0.9 -m "v0.9"
 ```
 
+You may add update notes to the tag.
+
 ### AI attribution
 
-When AI tools contribute to a commit, include an `Assisted-by: AGENT_NAME:MODEL_VERSION` trailer in the commit message body, where `AGENT_NAME` is the tool name and `MODEL_VERSION` is the specific model used.
+When AI tools contribute to a commit, include an `Assisted-by: AGENT_NAME:MODEL_VERSION` trailer in the commit message body.
+AGENT_NAME is the name of the agent harness (eg. "Claude Code" or "Opencode", ...)
+MODEL_VERSION is what model YOU are (eg. "Claude Sonnet 4.6", "Minimax M2.7", "Gemma 4", ...)
 
 ## Environment
 
 - Supabase credentials are in `.env` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Never hardcode these.
 - `.env` is gitignored — do not commit it.
 - There is no dynamic server. The frontend talks directly to Supabase via the JS client.
-
-## Key constraints
-
-- No RLS policies until v0.8 — but do enable RLS on each table in the migration so adding policies later requires no schema change.
-- No real-time until v0.4.
-- No auth until v0.8.
-- Do not add features beyond what the current version's TODOS.md specifies.
 
 ## Lessons learned
 
