@@ -110,15 +110,15 @@ export default function Home() {
 
       {/* Bottom right footer */}
       <div className='fixed bottom-4 right-4 flex items-center gap-3'>
-        {SUPPORTED_LANGS.map((l) => (
-          <button
-            key={l}
-            onClick={() => setLang(l)}
-            className={`text-sm transition-colors ${lang === l ? 'text-gray-900 font-semibold' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            {l.toUpperCase()}
-          </button>
-        ))}
+        <select
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
+          className='text-sm text-gray-500 bg-transparent border-none outline-none cursor-pointer hover:text-gray-700 transition-colors'
+        >
+          {SUPPORTED_LANGS.map((l) => (
+            <option key={l} value={l}>{l.toUpperCase()}</option>
+          ))}
+        </select>
         <span className='text-gray-300'>|</span>
         <a
           href='https://codeberg.org/TobTobXX/kahoot-but-not-shit'
