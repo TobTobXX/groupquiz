@@ -149,6 +149,11 @@ export default {
     proStatus: 'Pro-Status',
     pro: 'Pro',
     free: 'Kostenlos',
+    upgradeTitle: 'Auf Pro upgraden',
+    upgradeDesc: '10 $ / Jahr — Bilder zu Quizfragen hinzufügen',
+    upgrading: 'Weiter zur Kasse…',
+    upgradeError: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
+    checkoutSuccess: 'Du bist jetzt Pro-Abonnent. Danke, dass du Kbns unterstützt!',
   },
   edit: {
     loading: 'Lädt…',
