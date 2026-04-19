@@ -5,12 +5,12 @@ import { AuthMiddleware } from "../_shared/jwt.ts";
 
 const PRICE_ID = "price_1TNyDcCvpz2eeScnkE4VutU2";
 
-Deno.serve((req) =>
-  AuthMiddleware(req, async (req, userId, userEmail) => {
-    if (req.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
+Deno.serve((req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
+  return AuthMiddleware(req, async (req, userId, userEmail) => {
     console.log(`[checkout] request from user ${userId} (${userEmail})`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -100,5 +100,5 @@ Deno.serve((req) =>
       JSON.stringify({ url: session.url }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  })
-);
+  });
+});
