@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Header from '../components/Header'
-import { useI18n, SUPPORTED_LANGS } from '../context/I18nContext'
+import { useI18n, SUPPORTED_LANGS, LANG_NAMES } from '../context/I18nContext'
 
 export default function Home() {
   const [code, setCode] = useState('')
@@ -116,7 +116,7 @@ export default function Home() {
           className='text-sm text-gray-500 bg-transparent border-none outline-none cursor-pointer hover:text-gray-700 transition-colors'
         >
           {SUPPORTED_LANGS.map((l) => (
-            <option key={l} value={l}>{l.toUpperCase()}</option>
+            <option key={l} value={l}>{LANG_NAMES[l] ?? l.toUpperCase()}</option>
           ))}
         </select>
         <span className='text-gray-300'>|</span>

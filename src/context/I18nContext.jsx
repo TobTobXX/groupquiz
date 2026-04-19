@@ -4,6 +4,7 @@ import de from '../locales/de'
 
 const LOCALES = { en, de }
 export const SUPPORTED_LANGS = Object.keys(LOCALES)
+export const LANG_NAMES = { en: 'English', de: 'Deutsch' }
 
 function detectLang() {
   const stored = localStorage.getItem('lang')
