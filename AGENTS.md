@@ -7,7 +7,6 @@ This is a self-hostable real-time quiz platform — a better Kahoot. Read the pl
 - **[GOAL.md](GOAL.md)** — what we're building and for whom (player, host, quiz creator)
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — full architecture reference: tech stack, backend services, DB schema, file index, routing, migrations log, and quiz export format.
 - **[TASKS.md](TASKS.md)** — nine incremental versions (v0.1–v0.9), each with a checklist
-- **[TODOS.md](TODOS.md)** — detailed task list for the current version being worked on
 
 Always read these files at the start of a session to orient yourself before touching any code.
 
