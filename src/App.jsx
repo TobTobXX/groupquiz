@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { I18nProvider } from './context/I18nContext'
 import Home from './pages/Home'
 import Library from './pages/Library'
+import Host from './pages/Host'
 import Browse from './pages/Browse'
 import Play from './pages/Play'
 import Edit from './pages/Edit'
@@ -23,6 +24,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/library" element={<Library />} />
+      <Route path="/host" element={<Host />} />
       <Route path="/browse" element={<Browse />} />
       <Route path="/join" element={<Join />} />
       <Route path="/play" element={<Play />} />
@@ -42,14 +44,13 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/host" element={<Navigate to="/library" replace />} />
     </Routes>
   )
 }
 
 function VersionBadge() {
   const { pathname } = useLocation()
-  if (pathname === '/play' || pathname === '/library') return null
+  if (pathname === '/play' || pathname === '/host') return null
   return (
     <div className="fixed bottom-2 left-3 text-xs text-gray-400 select-none pointer-events-none">
       {__APP_VERSION__}

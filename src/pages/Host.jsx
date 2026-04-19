@@ -1,9 +1,9 @@
-import { useSearchParams } from 'react-router-dom'
-import HostLibrary from '../components/HostLibrary'
+import { useSearchParams, Navigate } from 'react-router-dom'
 import HostSession from '../components/HostSession'
 
 export default function Host() {
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('sessionId')
-  return sessionId ? <HostSession key={sessionId} sessionId={sessionId} /> : <HostLibrary />
+  if (!sessionId) return <Navigate to="/library" replace />
+  return <HostSession key={sessionId} sessionId={sessionId} />
 }

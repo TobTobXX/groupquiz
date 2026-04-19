@@ -43,7 +43,7 @@ export default function Browse() {
     const { data, error: err } = await supabase.rpc('create_session', { p_quiz_id: quizId })
     if (err) { setError(err.message); return }
     localStorage.setItem(`host_${data.session_id}`, data.host_secret)
-    navigate(`/library?sessionId=${data.session_id}`)
+    navigate(`/host?sessionId=${data.session_id}`)
   }
 
   async function handleStar(quizId) {
