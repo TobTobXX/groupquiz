@@ -64,7 +64,10 @@ export default function Profile() {
     setUpgrading(true)
     setUpgradeError(null)
 
-    const { data, error } = await supabase.functions.invoke('create-checkout-session')
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
 
     if (error || !data?.url) {
       console.error('create-checkout-session failed:', error)
