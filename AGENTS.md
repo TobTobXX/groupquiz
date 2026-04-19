@@ -139,6 +139,7 @@ MODEL_VERSION is what model YOU are (eg. "Claude Sonnet 4.6", "Minimax M2.7", "G
 
 - **`schedule` in `config.toml` is not supported** — even in v2.90.0, the `[functions.<name>]` block does not accept a `schedule` key; the CLI rejects it with "invalid keys". To schedule an Edge Function, use a pg_cron migration with `net.http_post` instead (see `supabase/migrations/20260415120000_sweep_orphan_images_cron.sql`).
 - **Use nixpkgs-unstable for a newer CLI** — `nix run nixpkgs#supabase-cli` gives v2.60.0. Use `nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli` to get v2.90.0 (the current latest). Apply the same pattern for other tools that need a newer version than what stable nixpkgs provides.
+- **Secrets are baked in at deploy time** — `supabase secrets set` does not hot-reload running Edge Functions. If secrets are set after a function is deployed, the function must be redeployed (`supabase functions deploy <name>`) before it can read them. Always set secrets before the first deploy, or redeploy immediately after.
 
 ### React patterns
 
