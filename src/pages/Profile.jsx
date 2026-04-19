@@ -16,6 +16,10 @@ export default function Profile() {
   const [upgrading, setUpgrading] = useState(false)
   const [upgradeError, setUpgradeError] = useState(null)
   const [checkoutSuccess, setCheckoutSuccess] = useState(false)
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState(null)
+  const [cancelSuccess, setCancelSuccess] = useState(false)
 
   // Detect ?checkout=success from Stripe redirect and clear it from the URL
   useEffect(() => {
@@ -29,13 +33,14 @@ export default function Profile() {
   useEffect(() => {
     async function load() {
       const [{ data: profile }, { data: end }] = await Promise.all([
-        supabase.from('profiles').select('username, is_pro').eq('id', user.id).single(),
+        supabase.from('profiles').select('username, is_pro, stripe_cancel_at_period_end').eq('id', user.id).single(),
         supabase.rpc('get_my_subscription_period_end'),
       ])
 
       if (profile) {
         setUsername(profile.username ?? '')
         setIsPro(profile.is_pro ?? false)
+        setCancelAtPeriodEnd(profile.stripe_cancel_at_period_end ?? false)
       }
       setPeriodEnd(end ?? null)
       setLoading(false)
@@ -78,6 +83,27 @@ export default function Profile() {
     }
 
     window.location.href = data.url
+  }
+
+  async function handleCancel() {
+    setCancelling(true)
+    setCancelError(null)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+
+    if (error || !data?.ok) {
+      console.error('cancel-subscription failed:', error)
+      setCancelError(t('profile.cancelError'))
+      setCancelling(false)
+      return
+    }
+
+    setCancelAtPeriodEnd(true)
+    setCancelSuccess(true)
+    setCancelling(false)
   }
 
   return (
@@ -134,7 +160,7 @@ export default function Profile() {
                     <span className="text-sm font-medium text-gray-700">{t('profile.proStatus')}</span>
                     {isPro && periodEnd && (
                       <span className="text-xs text-gray-400">
-                        {t('profile.renewsOn', {
+                        {t(cancelAtPeriodEnd ? 'profile.cancelsOn' : 'profile.renewsOn', {
                           date: new Date(periodEnd).toLocaleDateString(undefined, {
                             year: 'numeric', month: 'short', day: 'numeric',
                           }),
@@ -160,6 +186,26 @@ export default function Profile() {
                     >
                       {upgrading ? t('profile.upgrading') : t('profile.upgradeTitle')}
                     </button>
+                  </div>
+                )}
+
+                {isPro && !cancelAtPeriodEnd && (
+                  <div className="flex flex-col gap-2">
+                    {cancelSuccess && (
+                      <p className="text-green-500 text-sm">{t('profile.cancelSuccess')}</p>
+                    )}
+                    {cancelError && (
+                      <p className="text-red-400 text-sm">{cancelError}</p>
+                    )}
+                    {!cancelSuccess && (
+                      <button
+                        onClick={handleCancel}
+                        disabled={cancelling}
+                        className="border border-gray-300 hover:border-gray-400 disabled:opacity-50 text-gray-600 hover:text-gray-800 font-medium py-2.5 rounded-lg transition-colors text-sm"
+                      >
+                        {cancelling ? t('profile.cancelling') : t('profile.cancelSubscription')}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

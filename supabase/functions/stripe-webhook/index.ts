@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ is_pro: false, stripe_subscription_id: null })
+        .update({ is_pro: false, stripe_subscription_id: null, stripe_cancel_at_period_end: false })
         .eq('id', data.id)
 
       if (error) {

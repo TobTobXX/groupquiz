@@ -155,6 +155,11 @@ export default {
     upgradeError: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
     checkoutSuccess: 'Du bist jetzt Pro-Abonnent. Danke, dass du Kbns unterstützt!',
     renewsOn: 'Verlängert sich am {date}',
+    cancelsOn: 'Endet am {date}',
+    cancelSubscription: 'Abonnement kündigen',
+    cancelling: 'Kündigt…',
+    cancelError: 'Kündigung fehlgeschlagen. Bitte versuche es erneut.',
+    cancelSuccess: 'Dein Abonnement endet am Ende des aktuellen Abrechnungszeitraums.',
   },
   edit: {
     loading: 'Lädt…',

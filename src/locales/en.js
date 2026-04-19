@@ -155,6 +155,11 @@ export default {
     upgradeError: 'Something went wrong. Please try again.',
     checkoutSuccess: "You're now a Pro subscriber. Thanks for supporting Kbns!",
     renewsOn: 'Renews {date}',
+    cancelsOn: 'Cancels {date}',
+    cancelSubscription: 'Cancel subscription',
+    cancelling: 'Cancelling…',
+    cancelError: 'Failed to cancel. Please try again.',
+    cancelSuccess: 'Your subscription will cancel at the end of the current billing period.',
   },
   edit: {
     loading: 'Loading…',
