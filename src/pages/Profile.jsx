@@ -67,6 +67,7 @@ export default function Profile() {
     const { data, error } = await supabase.functions.invoke('create-checkout-session')
 
     if (error || !data?.url) {
+      console.error('create-checkout-session failed:', error)
       setUpgradeError(t('profile.upgradeError'))
       setUpgrading(false)
       return
