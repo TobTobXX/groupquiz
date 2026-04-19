@@ -9,7 +9,7 @@ export default {
     donateTitle: 'Spenden (demnächst)',
   },
   header: {
-    browse: 'Stöbern',
+    browse: 'Suchen',
     library: 'Bibliothek',
     login: 'Anmelden',
     create: 'Erstellen',
