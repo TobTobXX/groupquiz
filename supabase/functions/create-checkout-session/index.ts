@@ -96,6 +96,7 @@ Deno.serve((req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/profile?checkout=success`,
       cancel_url: `${origin}/profile`,
+      metadata: { supabase_user_id: userId },
       subscription_data: {
         metadata: { supabase_user_id: userId },
       },
