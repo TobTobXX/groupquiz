@@ -11,4 +11,5 @@ Items deferred to a later version. The version marker indicates the earliest poi
 
 - Music
 - Preview quizzes.
+- Replace edit/export with icons
 - Migrate to PocketBase to save on hosting costs?

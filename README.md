@@ -37,14 +37,10 @@ You need a Supabase project and a static host (Netlify, GitHub Pages, Vercel, et
 
 ## Development
 
-Prerequisites: [Nix](https://nixos.org/) and a Docker-compatible container runtime ([Docker Desktop](https://docs.docker.com/desktop/), [Podman](https://podman.io/), etc.).
-
-If using **Podman**, export the socket path before running any Supabase CLI commands:
+Compatibility with podman
 ```sh
 export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
 ```
-
-### Dev workflow
 
 ```sh
 nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start  # Start local Supabase: http://localhost:54323
