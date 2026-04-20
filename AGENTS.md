@@ -34,8 +34,8 @@ Use this workflow when working on anything beyond a single-line mechanical fix (
 Most tools are not installed globally. Run them via Nix:
 
 ```
-nix run nixpkgs#nodejs        -- ...   # node, npm, npx
-nix run nixpkgs#supabase-cli  -- ...   # supabase CLI (note: supabase-cli, not supabase)
+nix run nixpkgs#nodejs                                      -- ...   # node, npm, npx
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- ...   # supabase CLI (use unstable for current version)
 ```
 
 When a command would normally be `npm install`, use `nix run nixpkgs#nodejs -- npm install` (or wrap it in `nix shell nixpkgs#nodejs` for a multi-step workflow). Apply the same pattern for any other tool that may not be on PATH.
@@ -48,20 +48,63 @@ When a command would normally be `npm install`, use `nix run nixpkgs#nodejs -- n
 
 ## Supabase CLI
 
+The CLI is aliased as `nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli --` throughout this section.
+
+### Local development
+
+Start the full Supabase stack (Postgres, Auth, Storage, Realtime, Edge Runtime, Studio):
+
+```bash
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start
+```
+
+On first run this pulls Docker images and applies all migrations automatically.
+Studio is at http://localhost:54323. The output includes the local anon key — copy it into `.env.local`.
+
+Key local commands:
+
+```bash
+# Start (preserves existing DB data between restarts)
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start
+
+# Stop
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- stop
+
+# Reset DB: drops everything, reruns all migrations + supabase/seed.sql
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- db reset
+
+# Serve Edge Functions locally with dev secrets
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- functions serve --env-file supabase/functions/.env
+```
+
+#### Known local limitations
+
+- **Stripe FDW** (`get_my_subscription_period_end`) is not available locally; the RPC returns null. Acceptable for dev.
+- **Cron job** (`20260415120000_sweep_orphan_images_cron.sql`) hardcodes the production Edge Function URL. The job registers in the local DB but is harmless — it fires at 03:00 UTC and calls the production cleanup endpoint.
+
+### Remote (production)
+
 The project is linked to a remote Supabase instance (credentials stored in `supabase/.temp/`). Key commands:
 
-```
-# Apply pending migrations to the remote DB (run after writing a new migration file)
-nix run nixpkgs#supabase-cli -- db push
+```bash
+# Apply pending migrations to the remote DB
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- db push
 
 # Pull the current remote schema as a migration (useful after dashboard changes)
-nix run nixpkgs#supabase-cli -- db pull
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- db pull
 
 # Diff local migrations vs remote DB schema
-nix run nixpkgs#supabase-cli -- db diff
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- db diff
+
+# Deploy an Edge Function
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- functions deploy <function-name>
+
+# Set a production secret (do this before deploying a function that reads it)
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- secrets set KEY=value
 ```
 
-Migration files live in `supabase/migrations/` and are named `<YYYYMMDDHHmmss>_<description>.sql`. Seed data is also a migration (`..._seed.sql`) since the CLI has no separate `db seed` command for remote projects.
+Migration files live in `supabase/migrations/` and are named `<YYYYMMDDHHmmss>_<description>.sql`.
+Seed data (`supabase/seed.sql`) is local-only — it runs on `db reset` but is never pushed to production.
 
 ## Git discipline
 
@@ -122,9 +165,29 @@ MODEL_VERSION is what model YOU are (eg. "Claude Sonnet 4.6", "Minimax M2.7", "G
 
 ## Environment
 
-- Supabase credentials are in `.env` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Never hardcode these.
-- `.env` is gitignored — do not commit it.
-- There is no dynamic server. The frontend talks directly to Supabase via the JS client.
+There is no dynamic server. The frontend talks directly to Supabase via the JS client.
+
+### Frontend env files
+
+| File | Contents | Committed? |
+|---|---|---|
+| `.env` | Production `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` | No |
+| `.env.local` | Local dev overrides — same keys pointing at `http://127.0.0.1:54321` | No |
+
+Vite loads `.env.local` with higher priority than `.env`, so local overrides never affect production builds. See `.env.example` for the full template.
+
+Never hardcode Supabase credentials.
+
+### Edge Function secrets
+
+| Location | Used when | Committed? |
+|---|---|---|
+| `supabase/functions/.env` | `functions serve` (local dev) | No |
+| Supabase dashboard / `supabase secrets set` | Production Edge Functions | N/A |
+
+`supabase/functions/.env` holds dev Stripe credentials (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`). See `supabase/functions/.env.example`.
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by the local runtime — do not put them in `.env`.
 
 ## Lessons learned
 
