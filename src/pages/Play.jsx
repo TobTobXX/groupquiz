@@ -42,7 +42,7 @@ export default function Play() {
   const currentQuestionSlotsRef = useRef(null)
   const channelRef = useRef(null)
   const [currentQuestionSlots, setCurrentQuestionSlots] = useState(null)
-  const [correctSlotIndex, setCorrectSlotIndex] = useState(null)
+  const [correctSlotIndices, setCorrectSlotIndices] = useState([])
 
   // Keep refs in sync so async callbacks always see current values
   useEffect(() => { questionsRef.current = questions }, [questions])
@@ -59,7 +59,7 @@ export default function Play() {
       // Scoring happens server-side in close_question, so we compare answer IDs
       // for correctness rather than relying on points_earned (which would fail
       // for 0-point questions where correct answers also earn 0).
-      const [{ data: pa }, { data: correctAnswerId }] = await Promise.all([
+      const [{ data: pa }, { data: correctAnswerIds }] = await Promise.all([
         supabase
           .from('player_answers')
           .select('answer_id, points_earned')
@@ -67,21 +67,23 @@ export default function Play() {
           .eq('question_id', closedQuestion.id)
           .maybeSingle(),
         supabase
-          .rpc('get_correct_answer_id', { p_session_id: sid, p_question_id: closedQuestion.id }),
+          .rpc('get_correct_answer_ids', { p_session_id: sid, p_question_id: closedQuestion.id }),
       ])
-      const correct = pa ? pa.answer_id === correctAnswerId : false
+      const correct = pa ? (correctAnswerIds ?? []).includes(pa.answer_id) : false
       console.log('[play] Player answer:', pa ? `${correct ? 'correct' : 'wrong'}, ${pa.points_earned} pts` : 'no answer recorded')
-      console.log('[play] Correct answer id:', correctAnswerId)
+      console.log('[play] Correct answer ids:', correctAnswerIds)
       setSubmittedAnswerId(pa?.answer_id ?? null)
       setAnswerSubmitted(!!pa)
       setIsCorrect(pa ? correct : null)
       setPointsEarned(pa?.points_earned ?? 0)
 
-      if (slots && correctAnswerId) {
-        const idx = slots.findIndex((s) => s.answer_id === correctAnswerId)
-        setCorrectSlotIndex(idx >= 0 ? idx : null)
+      if (slots && correctAnswerIds?.length) {
+        const indices = slots
+          .filter((s) => correctAnswerIds.includes(s.answer_id))
+          .map((s) => s.slot_index)
+        setCorrectSlotIndices(indices)
       } else {
-        setCorrectSlotIndex(null)
+        setCorrectSlotIndices([])
       }
     }
     if (sid) {
@@ -222,7 +224,7 @@ export default function Play() {
             setFeedbackShown(false)
             setIsCorrect(null)
             setPointsEarned(0)
-            setCorrectSlotIndex(null)
+            setCorrectSlotIndices([])
           }
 
           if (!wasActiveRef.current && newState === 'active') {
@@ -322,7 +324,7 @@ export default function Play() {
     const style = { backgroundColor: SLOT_COLORS[slotIndex] }
 
     if (feedbackShown) {
-      if (correctSlotIndex === slotIndex) {
+      if (correctSlotIndices.includes(slotIndex)) {
         return { className: `${base} ring-4 ring-emerald-300 cursor-default`, style }
       }
       if (submittedAnswerId !== null && currentQuestionSlots?.find((s) => s.slot_index === slotIndex)?.answer_id === submittedAnswerId) {
