@@ -92,13 +92,15 @@ export default function HostLibrary() {
   }
 
   async function handleImport(e) {
-    const file = e.target.files?.[0]
+    const files = Array.from(e.target.files ?? [])
     e.target.value = ''
-    if (!file) return
+    if (files.length === 0) return
     setImporting(true)
     try {
-      const text = await file.text()
-      await importQuiz(supabase, user.id, text)
+      for (const file of files) {
+        const text = await file.text()
+        await importQuiz(supabase, user.id, text)
+      }
       const { data } = await supabase
         .from('quizzes')
         .select('id, title, creator_id, created_at, language, topic, questions(image_url, order_index)')
@@ -143,6 +145,7 @@ export default function HostLibrary() {
             ref={importInputRef}
             type="file"
             accept=".json"
+            multiple
             className="hidden"
             onChange={handleImport}
           />
