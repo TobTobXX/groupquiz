@@ -52,7 +52,13 @@ The CLI is aliased as `nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cl
 
 ### Local development
 
-Start the full Supabase stack (Postgres, Auth, Storage, Realtime, Edge Runtime, Studio):
+If using **Podman** instead of Docker Desktop, export the socket before running any Supabase CLI commands:
+
+```bash
+export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
+```
+
+Start the full Supabase stack (Postgres, Auth, Storage, Realtime, Studio, Edge Runtime):
 
 ```bash
 nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start

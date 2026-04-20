@@ -1,5 +1,6 @@
--- Enable pg_net so pg_cron jobs can make HTTP requests.
--- On Supabase hosted projects pg_net is pre-installed; this is a no-op there.
+-- Enable pg_cron and pg_net.
+-- On Supabase hosted projects both are pre-installed; these are no-ops there.
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
 -- Daily cron job: call the sweep-orphan-images Edge Function at 03:00 UTC.
