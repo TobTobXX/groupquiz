@@ -55,24 +55,28 @@ export default function Play() {
     console.log('[play] Loading feedback for question', closedQuestion?.id)
     setFeedbackShown(true)
     if (closedQuestion && pid) {
-      const { data: pa } = await supabase
-        .from('player_answers')
-        .select('answer_id, points_earned')
-        .eq('player_id', pid)
-        .eq('question_id', closedQuestion.id)
-        .maybeSingle()
-      // Derive correctness from points_earned: wrong answers always earn 0.
-      const correct = pa ? (pa.points_earned ?? 0) > 0 : false
+      // Fetch player's answer and the correct answer in parallel.
+      // Scoring happens server-side in close_question, so we compare answer IDs
+      // for correctness rather than relying on points_earned (which would fail
+      // for 0-point questions where correct answers also earn 0).
+      const [{ data: pa }, { data: correctAnswerId }] = await Promise.all([
+        supabase
+          .from('player_answers')
+          .select('answer_id, points_earned')
+          .eq('player_id', pid)
+          .eq('question_id', closedQuestion.id)
+          .maybeSingle(),
+        supabase
+          .rpc('get_correct_answer_id', { p_session_id: sid, p_question_id: closedQuestion.id }),
+      ])
+      const correct = pa ? pa.answer_id === correctAnswerId : false
       console.log('[play] Player answer:', pa ? `${correct ? 'correct' : 'wrong'}, ${pa.points_earned} pts` : 'no answer recorded')
+      console.log('[play] Correct answer id:', correctAnswerId)
       setSubmittedAnswerId(pa?.answer_id ?? null)
       setAnswerSubmitted(!!pa)
       setIsCorrect(pa ? correct : null)
       setPointsEarned(pa?.points_earned ?? 0)
 
-      // Fetch correct answer via RPC — only works after the question window closes.
-      const { data: correctAnswerId } = await supabase
-        .rpc('get_correct_answer_id', { p_session_id: sid, p_question_id: closedQuestion.id })
-      console.log('[play] Correct answer id:', correctAnswerId)
       if (slots && correctAnswerId) {
         const idx = slots.findIndex((s) => s.answer_id === correctAnswerId)
         setCorrectSlotIndex(idx >= 0 ? idx : null)
