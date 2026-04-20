@@ -137,6 +137,7 @@ export default {
     unstar: 'Unstar',
     star: 'Star',
     deleteConfirm: 'Delete this quiz? This cannot be undone.',
+    browseMore: 'Browse more',
   },
   profile: {
     title: 'Profile',

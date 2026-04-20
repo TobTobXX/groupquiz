@@ -137,6 +137,7 @@ export default {
     unstar: 'Markierung aufheben',
     star: 'Markieren',
     deleteConfirm: 'Dieses Quiz löschen? Das kann nicht rückgängig gemacht werden.',
+    browseMore: 'Mehr durchsuchen',
   },
   profile: {
     title: 'Profil',

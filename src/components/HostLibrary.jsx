@@ -123,14 +123,22 @@ export default function HostLibrary() {
       <div className="flex-1 px-6 py-6 max-w-7xl mx-auto w-full flex flex-col gap-8">
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
-        {/* Create / Import */}
-        <div className="flex gap-2">
-          <Link
-            to='/edit'
-            className='flex-1 text-center border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold py-3 rounded-xl transition-colors'
-          >
-            {t('hostLibrary.createNew')}
-          </Link>
+        {/* My Quizzes */}
+        <Section title={t('hostLibrary.myQuizzes')}>
+          {ownQuizzes.map((quiz) => (
+            <QuizCard
+              key={quiz.id}
+              quiz={quiz}
+              isOwn
+              user={user}
+              t={t}
+              onHost={() => createSession(quiz.id)}
+              onExport={() => handleExport(quiz)}
+              onDelete={() => handleDelete(quiz.id)}
+              exporting={exporting === quiz.id}
+              deleting={deleting === quiz.id}
+            />
+          ))}
           <input
             ref={importInputRef}
             type="file"
@@ -138,53 +146,43 @@ export default function HostLibrary() {
             className="hidden"
             onChange={handleImport}
           />
+          <Link
+            to='/edit'
+            className='border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold rounded-xl flex items-center justify-center min-h-[11rem] text-center px-2 transition-colors'
+          >
+            {t('hostLibrary.createNew')}
+          </Link>
           <button
             type="button"
             onClick={() => importInputRef.current?.click()}
             disabled={importing}
-            className="border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold rounded-xl flex items-center justify-center min-h-[11rem] text-center px-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {importing ? t('hostLibrary.importing') : t('hostLibrary.import')}
           </button>
-        </div>
-
-        {/* My Quizzes */}
-        {ownQuizzes.length > 0 && (
-          <Section title={t('hostLibrary.myQuizzes')}>
-            {ownQuizzes.map((quiz) => (
-              <QuizCard
-                key={quiz.id}
-                quiz={quiz}
-                isOwn
-                user={user}
-                t={t}
-                onHost={() => createSession(quiz.id)}
-                onExport={() => handleExport(quiz)}
-                onDelete={() => handleDelete(quiz.id)}
-                exporting={exporting === quiz.id}
-                deleting={deleting === quiz.id}
-              />
-            ))}
-          </Section>
-        )}
+        </Section>
 
         {/* Starred Quizzes */}
-        {starredQuizzes.length > 0 && (
-          <Section title={t('hostLibrary.starred')}>
-            {starredQuizzes.map((quiz) => (
-              <QuizCard
-                key={quiz.id}
-                quiz={quiz}
-                isOwn={false}
-                starred
-                user={user}
-                t={t}
-                onHost={() => createSession(quiz.id)}
-                onStar={() => handleUnstar(quiz.id)}
-              />
-            ))}
-          </Section>
-        )}
+        <Section title={t('hostLibrary.starred')}>
+          {starredQuizzes.map((quiz) => (
+            <QuizCard
+              key={quiz.id}
+              quiz={quiz}
+              isOwn={false}
+              starred
+              user={user}
+              t={t}
+              onHost={() => createSession(quiz.id)}
+              onStar={() => handleUnstar(quiz.id)}
+            />
+          ))}
+          <Link
+            to='/browse'
+            className='border-2 border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 text-gray-500 hover:text-indigo-500 font-semibold rounded-xl flex items-center justify-center min-h-[11rem] text-center px-2 transition-colors'
+          >
+            {t('hostLibrary.browseMore')}
+          </Link>
+        </Section>
       </div>
     </div>
   )
