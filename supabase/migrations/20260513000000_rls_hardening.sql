@@ -31,6 +31,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_stat_statements"  WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto"            WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "supabase_vault"      WITH SCHEMA "vault";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"           WITH SCHEMA "extensions";
+CREATE EXTENSION IF NOT EXISTS "wrappers"            WITH SCHEMA "extensions";
 
 
 -- -----------------------------------------------------------------------------
@@ -228,6 +229,64 @@ ALTER TABLE ONLY "public"."starred_quizzes"
 
 ALTER TABLE ONLY "public"."starred_quizzes"
     ADD CONSTRAINT "starred_quizzes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+-- -----------------------------------------------------------------------------
+-- Stripe FDW (Postgres Wrappers)
+-- Lets get_my_subscription_period_end() query live Stripe data via a foreign
+-- table instead of a webhook round-trip.
+-- The Stripe API key lives in vault.secrets (name: 'stripe_api_key_id').
+-- On production the secret is pre-created via the Supabase dashboard.
+-- On local dev the secret is inserted by seed.sql, which runs after migrations,
+-- so the DO block below is a no-op on fresh resets; seed.sql recreates the
+-- server and table once the secret is available.
+-- -----------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_secret_id uuid;
+BEGIN
+  -- The wrappers extension registers stripe_fdw_handler in pg_proc but the Rust
+  -- handler is only loadable on Supabase managed Postgres (not local Docker).
+  -- Wrap everything in EXCEPTION so a missing/unloadable handler is a soft skip.
+  BEGIN
+    EXECUTE 'CREATE FOREIGN DATA WRAPPER stripe_wrapper HANDLER stripe_fdw_handler VALIDATOR stripe_fdw_validator';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Stripe FDW handler not available (%), skipping FDW setup — seed.sql will complete setup on local dev.', SQLERRM;
+    RETURN;
+  END;
+
+  SELECT id INTO v_secret_id
+    FROM vault.secrets
+   WHERE name = 'stripe_api_key_id'
+   LIMIT 1;
+
+  IF v_secret_id IS NULL THEN
+    RAISE NOTICE 'stripe_api_key_id not found in vault; skipping server and foreign table creation.';
+    RETURN;
+  END IF;
+
+  EXECUTE format(
+    'CREATE SERVER stripe_server FOREIGN DATA WRAPPER stripe_wrapper OPTIONS (api_key_id %L)',
+    v_secret_id::text
+  );
+
+  CREATE SCHEMA IF NOT EXISTS stripe;
+
+  EXECUTE $sql$
+    CREATE FOREIGN TABLE stripe.subscriptions (
+      id                   text,
+      customer             text,
+      status               text,
+      current_period_start timestamp,
+      current_period_end   timestamp,
+      cancel_at_period_end boolean,
+      attrs                jsonb
+    )
+    SERVER stripe_server
+    OPTIONS (object 'subscriptions', rowid_column 'id')
+  $sql$;
+END;
+$$;
 
 
 -- -----------------------------------------------------------------------------
