@@ -44,49 +44,34 @@ If using **Podman**, export the socket path before running any Supabase CLI comm
 export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
 ```
 
-### First-time setup
+### Dev workflow
 
-**1. Install Node dependencies:**
 ```sh
-nix shell nixpkgs#nodejs -c npm install
+nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start  # Start local Supabase: http://localhost:54323
+nix shell nixpkgs#nodejs -c npm run dev  # Starts the frontend
 ```
 
-**2. Start local Supabase** (pulls Docker images and applies all migrations):
-```sh
-nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start
-```
-Studio is at http://localhost:54323. The command output includes a local anon key — you need it in the next step.
-
-**3. Create `.env.local`** (gitignored) with the local credentials:
-```
+Create .env.local
+```.env
 VITE_SUPABASE_URL=http://127.0.0.1:54321
 VITE_SUPABASE_ANON_KEY=<anon key from step 2>
 ```
+Create supabase/functions/.env from supabase/functions/.env.example.
 
-**4. Create `supabase/functions/.env`** (gitignored) with dev Stripe credentials — see `supabase/functions/.env.example` for the template.
+#### Tips:
 
-**5. Run the frontend:**
-```sh
-nix shell nixpkgs#nodejs -c npm run dev
-```
-
-**6. (Optional) Serve Edge Functions locally:**
+Serve edge functions locally (to observe errors):
 ```sh
 nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- functions serve --env-file supabase/functions/.env
 ```
-A Stripe test webhook tunnel (e.g. `stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook`) is needed to test the full subscription flow end-to-end.
 
-### Daily workflow
-
+Stripe webhook tunnel (to complete checkout locally):
 ```sh
-# Start Supabase (if stopped; preserves DB data)
-nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- start
+nix shell nixpkgs#stripe-cli -c stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
+````
 
-# Run the frontend dev server
-nix shell nixpkgs#nodejs -c npm run dev
-
-# Reset the database (reruns all migrations + seed data)
+Reset the database (reruns all migrations + seed data)
+```sh
 nix run github:nixos/nixpkgs/nixpkgs-unstable#supabase-cli -- db reset
 ```
 
-The seed data (`supabase/seed.sql`) provides a public "Sample Quiz" so Browse and the full play flow work without creating an account.
