@@ -224,3 +224,7 @@ Never hardcode Supabase credentials.
 **Why:** User called this out directly: "I HATE the 'something went wrong' error message. At least print the error in the console."
 **How to apply:** Any catch block or error handler that shows a generic string to the user must also log the raw error object to the console.
 
+### Supabase Edge Function JWT
+
+- **New browser-facing Edge Functions need `verify_jwt = false`** — Every new browser-facing Edge Function must have a `[functions.<name>]` block with `verify_jwt = false` in `supabase/config.toml`. Supabase's platform-level JWT verification doesn't support ES256. All functions in this project authenticate in code via `AuthMiddleware` (`_shared/jwt.ts`). Without this flag, the platform rejects requests before function code runs with `UNAUTHORIZED_UNSUPPORTED_TOKEN_ALGORITHM: Unsupported JWT algorithm ES256`. Add the entry to `config.toml` alongside the function code, before deploying.
+

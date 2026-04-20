@@ -69,7 +69,7 @@ export default function Home() {
       {/* Center content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-10">
         <div className="flex flex-col items-center gap-6">
-          <h1 className="text-5xl font-bold text-center">Kahoot but not shit</h1>
+          <h1 className="text-5xl font-bold text-center">Groupquiz</h1>
           <button
             onClick={() => navigate(user ? '/library' : '/browse')}
             className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3 rounded-xl text-lg transition-colors"
@@ -123,7 +123,7 @@ export default function Home() {
         </select>
         <span className='text-gray-300'>|</span>
         <a
-          href='https://codeberg.org/TobTobXX/kahoot-but-not-shit'
+          href='https://codeberg.org/TobTobXX/groupquiz'
           target='_blank'
           rel='noopener noreferrer'
           className='text-sm text-gray-500 hover:text-gray-700 transition-colors'

@@ -155,7 +155,7 @@ export default {
     proFeatureImages: 'Attach images to quiz questions',
     upgrading: 'Redirecting to checkout…',
     upgradeError: 'Something went wrong. Please try again.',
-    checkoutSuccess: "You're now a Pro subscriber. Thanks for supporting Kbns!",
+    checkoutSuccess: "You're now a Pro subscriber. Thanks for supporting Groupquiz!",
     renewsOn: 'Renews {date}',
     cancelsOn: 'Cancels {date}',
     cancelSubscription: 'Cancel subscription',

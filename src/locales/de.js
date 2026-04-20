@@ -155,7 +155,7 @@ export default {
     proFeatureImages: 'Bilder zu Quizfragen hinzufügen',
     upgrading: 'Weiter zur Kasse…',
     upgradeError: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
-    checkoutSuccess: 'Du bist jetzt Pro-Abonnent. Danke, dass du Kbns unterstützt!',
+    checkoutSuccess: 'Du bist jetzt Pro-Abonnent. Danke, dass du Groupquiz unterstützt!',
     renewsOn: 'Verlängert sich am {date}',
     cancelsOn: 'Endet am {date}',
     cancelSubscription: 'Abonnement kündigen',

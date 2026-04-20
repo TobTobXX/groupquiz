@@ -22,6 +22,6 @@ jobs:
 
       - uses: https://codeberg.org/git-pages/action@v2
         with:
-          site: "https://tobtobxx.codeberg.page/kahoot-but-not-shit/"
+          site: "https://tobtobxx.codeberg.page/groupquiz/"
           token: ${{ forge.token }}
           source: dist/

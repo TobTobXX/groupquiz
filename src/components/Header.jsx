@@ -14,7 +14,7 @@ export default function Header() {
     <header className="flex items-center gap-4 px-6 py-4">
       {/* Left: logo + library link */}
       <Link to="/" className="text-4xl font-bold text-gray-900 hover:text-gray-700 transition-colors">
-        Kbns
+        Groupquiz
       </Link>
       <Link
         to="/browse"
