@@ -25,7 +25,7 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
       {/* Slot grid with correct/wrong highlights */}
       <div className="grid grid-cols-2 gap-3">
         {slots.map((slot) => {
-          const { className, style } = slotProps(slot.slot_index, slot.color)
+          const { className, style } = slotProps(slot.slot_index)
           return (
             <div key={slot.slot_index} className={className} style={style}>
               <SlotIcon name={slot.icon} />

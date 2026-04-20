@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import SlotIcon from './SlotIcon'
 import Header from './Header'
-import { SLOT_COLOR_HEX } from '../lib/slots'
+import { SLOT_COLORS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Post-session results screen shown to the host when state === 'finished'.
@@ -46,7 +46,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
           .in('question_id', questionIds),
         supabase
           .from('session_question_answers')
-          .select('question_id, slot_index, answer_id, color, icon')
+          .select('question_id, slot_index, answer_id, icon')
           .eq('session_id', sessionId),
         playerIds.length > 0
           ? supabase
@@ -190,7 +190,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                             {/* Color + icon chip */}
                             <div
                               className="w-8 h-8 rounded flex items-center justify-center shrink-0"
-                              style={{ backgroundColor: SLOT_COLOR_HEX[slot.color] }}
+                              style={{ backgroundColor: SLOT_COLORS[slot.slot_index] }}
                             >
                               <SlotIcon name={slot.icon} size={18} className="text-white" />
                             </div>
@@ -201,7 +201,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                                   className="h-full rounded-full transition-all"
                                   style={{
                                     width: `${barWidth}%`,
-                                    backgroundColor: SLOT_COLOR_HEX[slot.color],
+                                    backgroundColor: SLOT_COLORS[slot.slot_index],
                                     opacity: 0.85,
                                   }}
                                 />

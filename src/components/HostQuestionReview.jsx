@@ -1,5 +1,5 @@
 import SlotIcon from './SlotIcon'
-import { SLOT_COLOR_HEX } from '../lib/slots'
+import { SLOT_COLORS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Full-screen between-question view: correct answer revealed, per-slot counts,
@@ -57,7 +57,7 @@ export default function HostQuestionReview({
               <div
                 key={slot.slot_index}
                 className={`relative flex items-center gap-6 px-8 rounded-2xl overflow-hidden transition-opacity ${isCorrect ? '' : 'opacity-40'}`}
-                style={{ backgroundColor: SLOT_COLOR_HEX[slot.color] }}
+                style={{ backgroundColor: SLOT_COLORS[slot.slot_index] }}
               >
                 {isCorrect && (
                   <div className="absolute inset-0 ring-8 ring-inset ring-emerald-300 rounded-2xl pointer-events-none" />

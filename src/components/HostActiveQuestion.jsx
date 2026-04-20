@@ -1,5 +1,5 @@
 import SlotIcon from './SlotIcon'
-import { SLOT_COLOR_HEX } from '../lib/slots'
+import { SLOT_COLORS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Full-screen active question display with large answer buttons,
@@ -73,7 +73,7 @@ export default function HostActiveQuestion({
                 <div
                   key={slot.slot_index}
                   className="flex items-center gap-6 px-8 rounded-2xl overflow-hidden"
-                  style={{ backgroundColor: SLOT_COLOR_HEX[slot.color] }}
+                  style={{ backgroundColor: SLOT_COLORS[slot.slot_index] }}
                 >
                   <SlotIcon name={slot.icon} className="text-white flex-shrink-0" size={108} />
                   <span className="text-white font-bold text-5xl md:text-6xl text-center flex-1 leading-tight">

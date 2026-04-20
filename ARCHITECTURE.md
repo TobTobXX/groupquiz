@@ -80,9 +80,8 @@ All tables have RLS enabled. `quizzes`, `questions`, and `answers` are creator-s
 | `id` | uuid PK | |
 | `session_id` | uuid FK → sessions | cascade delete |
 | `question_id` | uuid FK → questions | cascade delete |
-| `slot_index` | integer | 0–3; display position |
+| `slot_index` | integer | 0–3; display position; color is derived from slot_index (0=red, 1=blue, 2=yellow, 3=green) |
 | `answer_id` | uuid FK → answers | which answer this slot maps to |
-| `color` | text | `'red'`, `'blue'`, `'yellow'`, `'green'` |
 | `icon` | text | `'circle'`, `'diamond'`, `'triangle'`, `'square'` |
 | — | unique | `(session_id, question_id, slot_index)` |
 
@@ -206,6 +205,7 @@ Migrations are applied in filename order. Each file is named `<YYYYMMDDHHmmss>_<
 |---|---|
 | `20260513000000_rls_hardening.sql` | Full squashed schema as of 2026-05-13 — single authoritative migration. Creates all tables, constraints, foreign keys, functions, triggers, RLS policies, realtime publication entries, storage bucket policies, pg_cron jobs (hourly session cleanup + daily orphan-image sweep), and the Stripe FDW RPC |
 | `20260514000000_hide_secret_columns.sql` | Security fix: switches `sessions` and `players` from `GRANT ALL` (table-level) to column-level `SELECT` grants, hiding `sessions.host_secret` and `players.secret` from `anon`/`authenticated` via both REST and Realtime. Also adds explicit auth/ownership guards to `save_quiz` (rejects unauthenticated callers) and `update_quiz` (rejects non-owners). |
+| `20260520000000_drop_color_column.sql` | Drops the redundant `color` column from `session_question_answers` (color is always deterministic from `slot_index`) and updates `assign_answer_slots` accordingly. |
 
 ## Quiz export format
 

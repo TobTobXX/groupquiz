@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import SlotIcon from '../components/SlotIcon'
 import FeedbackView from '../components/FeedbackView'
-import { SLOT_COLOR_HEX } from '../lib/slots'
+import { SLOT_COLORS } from '../lib/slots'
 import { byOrderIndex } from '../lib/utils'
 import { useI18n } from '../context/I18nContext'
 
@@ -314,12 +314,12 @@ export default function Play() {
 
   // Returns { className, style } for a slot, covering all interaction states.
   // Used by both the active-question grid (buttons) and the feedback grid (divs).
-  function slotProps(slotIndex, color) {
+  function slotProps(slotIndex) {
     // h-full works in the active-question grid (explicit flex-1 grid-rows-2).
     // In the feedback grid (auto row heights), h-full overflows the container —
     // use py-6 there so items size to their content.
     const base = `${feedbackShown ? 'py-6' : 'h-full'} rounded-2xl flex flex-col items-center justify-center gap-2 transition-opacity`
-    const style = { backgroundColor: SLOT_COLOR_HEX[color] }
+    const style = { backgroundColor: SLOT_COLORS[slotIndex] }
 
     if (feedbackShown) {
       if (correctSlotIndex === slotIndex) {
@@ -441,7 +441,7 @@ export default function Play() {
           <div className="w-full max-w-xl flex flex-col gap-6 flex-1 min-h-0">
             <div className="grid grid-cols-2 grid-rows-2 gap-3 flex-1">
               {currentQuestionSlots.map((slot) => {
-                const { className, style } = slotProps(slot.slot_index, slot.color)
+                const { className, style } = slotProps(slot.slot_index)
                 return (
                   <button
                     key={slot.slot_index}
