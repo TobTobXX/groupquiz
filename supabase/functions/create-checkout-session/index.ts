@@ -3,8 +3,6 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { AuthMiddleware } from "../_shared/jwt.ts";
 
-const PRICE_ID = "price_1TO3tRCjpMVCrjw8OuWsYNCU";
-
 Deno.serve((req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,6 +25,15 @@ Deno.serve((req) => {
       console.error("[checkout] STRIPE_SECRET_KEY is not set");
       return new Response(
         JSON.stringify({ error: "Server misconfiguration: STRIPE_SECRET_KEY not set" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const priceId = Deno.env.get("STRIPE_PRICE_ID");
+    if (!priceId) {
+      console.error("[checkout] STRIPE_PRICE_ID is not set");
+      return new Response(
+        JSON.stringify({ error: "Server misconfiguration: STRIPE_PRICE_ID not set" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -86,7 +93,7 @@ Deno.serve((req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
-      line_items: [{ price: PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/profile?checkout=success`,
       cancel_url: `${origin}/profile`,
       subscription_data: {
