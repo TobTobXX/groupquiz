@@ -232,7 +232,7 @@ export default function Edit() {
         navigate(`/edit?quizId=${newId}`, { replace: true })
       } else {
         // Edit mode: single RPC call replaces all questions and answers atomically.
-        const { error } = await supabase.rpc('update_quiz', {
+        const { error } = await supabase.rpc('save_quiz', {
           p_quiz_id: quizIdToUse,
           p_title: currentTitle.trim(),
           p_is_public: currentIsPublic,
