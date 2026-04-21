@@ -536,7 +536,7 @@ $$;
 -- Creates a new session for the given quiz.
 -- Returns {session_id, join_code, host_secret}; host_secret must be stored
 -- client-side (localStorage) and passed to all subsequent host RPCs.
-CREATE OR REPLACE FUNCTION "public"."start_session"("p_quiz_id" "uuid")
+CREATE OR REPLACE FUNCTION "public"."create_session"("p_quiz_id" "uuid")
 RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -900,7 +900,7 @@ BEGIN
 
   INSERT INTO public.players (session_id, nickname)
   VALUES (v_session_id, p_nickname)
-  RETURNING id, secret INTO v_player_id, v_secret;
+  RETURNING id, player_secret INTO v_player_id, v_secret;
 
   RETURN jsonb_build_object('player_id', v_player_id, 'secret', v_secret);
 END;
