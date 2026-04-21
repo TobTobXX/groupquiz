@@ -7,15 +7,8 @@
 -- -----------------------------------------------------------------------------
 -- Extensions
 -- -----------------------------------------------------------------------------
---CREATE EXTENSION IF NOT EXISTS "pg_cron"            WITH SCHEMA "pg_catalog";
---CREATE EXTENSION IF NOT EXISTS "pg_net"             WITH SCHEMA "extensions";
---CREATE EXTENSION IF NOT EXISTS "pg_graphql"         WITH SCHEMA "graphql";
---CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
---CREATE EXTENSION IF NOT EXISTS "pgcrypto"           WITH SCHEMA "extensions";
---CREATE EXTENSION IF NOT EXISTS "supabase_vault"     WITH SCHEMA "vault";
---CREATE EXTENSION IF NOT EXISTS "uuid-ossp"          WITH SCHEMA "extensions";
---CREATE EXTENSION IF NOT EXISTS "wrappers"           WITH SCHEMA "extensions";
-
+CREATE EXTENSION IF NOT EXISTS "pg_cron"            WITH SCHEMA "pg_catalog";
+CREATE EXTENSION IF NOT EXISTS "wrappers"           WITH SCHEMA "extensions";
 
 -- -----------------------------------------------------------------------------
 -- Stripe FDW (Postgres Wrappers)
@@ -204,7 +197,6 @@ CREATE TABLE IF NOT EXISTS "public"."sessions" (
     CONSTRAINT "sessions_join_code_key" UNIQUE ("join_code"),
     "state"      "text" DEFAULT 'waiting'::"text" NOT NULL,  -- waiting | asking | reviewing | finished
     "active_question_id" "uuid" DEFAULT NULL, -- active question
-    CONSTRAINT "sessions_active_question_id_fkey" FOREIGN KEY ("active_question_id") REFERENCES "public"."session_questions"("id") ON DELETE SET NULL,
     "host_secret" "uuid" DEFAULT "gen_random_uuid"() NOT NULL, -- hidden from client roles; verified by host RPCs
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
@@ -215,7 +207,7 @@ CREATE TABLE IF NOT EXISTS "public"."players" (
     CONSTRAINT "players_pkey" PRIMARY KEY ("id"),
     "session_id"    "uuid" NOT NULL,
     CONSTRAINT "players_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE CASCADE,
-    "nickname"      "varchar(40)" NOT NULL,
+    "nickname"      "text" NOT NULL,
     "score"         integer DEFAULT 0 NOT NULL,
     "streak"        integer DEFAULT 0 NOT NULL,           -- consecutive correct answers
     "correct_count" integer DEFAULT 0 NOT NULL,           -- total correct answers
@@ -244,6 +236,9 @@ CREATE TABLE IF NOT EXISTS "public"."session_questions" (
     "closed_at"            timestamp with time zone,           -- null while open
     "correct_slot_indices" "jsonb"                  -- null until score_question fires; e.g. [0, 2]
 );
+ALTER TABLE ONLY "public"."sessions"
+    ADD CONSTRAINT "sessions_active_question_id_fkey" FOREIGN KEY ("active_question_id")
+    REFERENCES "public"."session_questions"("id") ON DELETE SET NULL;
 
 
 -- One row per player per question. Points default 0; set by score_question.
@@ -272,7 +267,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "id"       "uuid" NOT NULL,    -- PK; FK → auth.users (cascade delete)
     CONSTRAINT "profiles_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE,
-    "username" "varchar(30)"              -- nullable; optional display name
+    "username" "text"              -- nullable; optional display name
 );
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 

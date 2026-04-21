@@ -12,4 +12,6 @@ Items deferred to a later version. The version marker indicates the earliest poi
 - Music
 - Preview quizzes.
 - Replace edit/export with icons
+- Handle too long nicks/usernames gracefully
+- Use the new waiting -> asking -> reviewing -> asking -> reviewing -> ... -> finished states
 - Migrate to PocketBase to save on hosting costs?
