@@ -22,8 +22,8 @@ CREATE EXTENSION IF NOT EXISTS "wrappers"           WITH SCHEMA "extensions";
 -- -----------------------------------------------------------------------------
 -- Create FDW server
 CREATE FOREIGN DATA WRAPPER stripe_wrapper
-  HANDLER stripe_fdw_handler
-  VALIDATOR stripe_fdw_validator;
+  HANDLER extensions.stripe_fdw_handler
+  VALIDATOR extensions.stripe_fdw_validator;
 
 -- Set up FDW subscriptions table
 DO $$
