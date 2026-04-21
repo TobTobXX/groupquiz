@@ -28,12 +28,25 @@ export function AuthProvider({ children }) {
       setProfile(null)
       return
     }
-    supabase
-      .from('profiles')
-      .select('username, is_pro')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => setProfile(data ?? null))
+
+    Promise.all([
+      supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single(),
+      supabase
+        .from('subscriptions')
+        .select('is_pro')
+        .eq('id', user.id)
+        .single()
+    ]).then(([profileRes, subRes]) => {
+      setProfile({
+        username: profileRes.data?.username ?? null,
+        is_pro: subRes.data?.is_pro ?? false
+      })
+    });
+
   }, [user])
 
   async function signOut() {
