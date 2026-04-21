@@ -1,19 +1,18 @@
 import SlotIcon from './SlotIcon'
-import { SLOT_COLORS } from '../lib/slots'
+import { SLOT_COLORS, SLOT_ICONS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Full-screen active question display with large answer buttons,
 // game code, timer, and bottom navigation controls.
 export default function HostActiveQuestion({
   joinCode,
-  question,
+  sessionQuestion,  // full session_questions row
   currentQuestionIndex,
   totalQuestions,
   timeRemaining,
-  slots,
   answerCount,
   playerCount,
-  loadingSlots,
+  loadingNext,
   isFullscreen,
   onToggleFullscreen,
   onClose,
@@ -21,6 +20,8 @@ export default function HostActiveQuestion({
   onEnd,
 }) {
   const { t } = useI18n()
+  const slots = sessionQuestion?.slots ?? []
+
   return (
     <div className="fixed inset-0 flex flex-col bg-gray-50">
       {/* Question row: Timer left, Answer count right */}
@@ -36,9 +37,9 @@ export default function HostActiveQuestion({
 
         {/* Question text - center */}
         <div className="flex-1 max-w-7xl">
-          {question && (
+          {sessionQuestion && (
             <h1 className="text-6xl md:text-7xl font-bold text-center text-gray-900 leading-tight">
-              {question.question_text}
+              {sessionQuestion.question_text}
             </h1>
           )}
         </div>
@@ -52,10 +53,10 @@ export default function HostActiveQuestion({
       </div>
 
       {/* Question image */}
-      {question?.image_url && (
+      {sessionQuestion?.image_url && (
         <div className="flex justify-center px-4 pb-2">
           <img
-            src={question.image_url}
+            src={sessionQuestion.image_url}
             alt=""
             className="h-[25vh] w-full object-contain rounded-xl"
           />
@@ -65,23 +66,20 @@ export default function HostActiveQuestion({
       {/* Main content area: answers take most space */}
       <div className="flex-1 flex flex-col px-4 pb-4 min-h-0">
         {/* Answer grid - large buttons */}
-        {slots && (
+        {slots.length > 0 && (
           <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
-            {slots.map((slot) => {
-              const answer = question?.answers?.find((a) => a.id === slot.answer_id)
-              return (
-                <div
-                  key={slot.slot_index}
-                  className="flex items-center gap-6 px-8 rounded-2xl overflow-hidden"
-                  style={{ backgroundColor: SLOT_COLORS[slot.slot_index] }}
-                >
-                  <SlotIcon name={slot.icon} className="text-white flex-shrink-0" size={108} />
-                  <span className="text-white font-bold text-5xl md:text-6xl text-center flex-1 leading-tight">
-                    {answer?.answer_text ?? ''}
-                  </span>
-                </div>
-              )
-            })}
+            {slots.map((slot) => (
+              <div
+                key={slot.slot_index}
+                className="flex items-center gap-6 px-8 rounded-2xl overflow-hidden"
+                style={{ backgroundColor: SLOT_COLORS[slot.slot_index] }}
+              >
+                <SlotIcon name={SLOT_ICONS[slot.slot_index]} className="text-white flex-shrink-0" size={108} />
+                <span className="text-white font-bold text-5xl md:text-6xl text-center flex-1 leading-tight">
+                  {slot.answer_text}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -108,10 +106,10 @@ export default function HostActiveQuestion({
           </button>
           <button
             onClick={currentQuestionIndex >= totalQuestions - 1 ? onEnd : onNext}
-            disabled={loadingSlots}
+            disabled={loadingNext}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-5 px-16 rounded-lg transition-colors text-2xl"
           >
-            {loadingSlots ? '…' : t('hostActive.nextQuestion')}
+            {loadingNext ? '…' : t('hostActive.nextQuestion')}
           </button>
         </div>
 

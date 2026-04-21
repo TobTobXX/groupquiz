@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import SlotIcon from './SlotIcon'
 import Header from './Header'
-import { SLOT_COLORS } from '../lib/slots'
+import { SLOT_COLORS, SLOT_ICONS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Post-session results screen shown to the host when state === 'finished'.
 // Displays the final leaderboard and a per-question breakdown.
-export default function HostResults({ sessionId, quizId, onHostAgain }) {
+export default function HostResults({ sessionId, onHostAgain }) {
   const [leaderboard, setLeaderboard] = useState([])
   const [questions, setQuestions] = useState([])
-  // Map: question_id → { slots: [...], answers: [...], playerAnswers: [...] }
+  // Map: session_question_id → { slots, sessionAnswers, correct_slot_indices }
   const [questionData, setQuestionData] = useState({})
   const [loading, setLoading] = useState(true)
   const { t } = useI18n()
@@ -26,47 +26,29 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
         .order('nickname')
       setLeaderboard(lb ?? [])
 
-      // 2. Questions for this quiz
-      const { data: qs } = await supabase
-        .from('questions')
-        .select('id, question_text, time_limit, points, order_index, image_url')
-        .eq('quiz_id', quizId)
-        .order('order_index')
-      if (!qs || qs.length === 0) { setLoading(false); return }
-      setQuestions(qs)
+      // 2. Session questions for this session (ordered by question_index)
+      const { data: sqs } = await supabase
+        .from('session_questions')
+        .select('id, question_index, question_text, time_limit, points, image_url, slots, correct_slot_indices')
+        .eq('session_id', sessionId)
+        .order('question_index')
+      if (!sqs || sqs.length === 0) { setLoading(false); return }
+      setQuestions(sqs)
 
-      const questionIds = qs.map((q) => q.id)
-      const playerIds = (lb ?? []).map((p) => p.id)
+      // 3. All session_answers for these questions
+      const sqIds = sqs.map((sq) => sq.id)
+      const { data: sessionAnswers } = await supabase
+        .from('session_answers')
+        .select('session_question_id, slot_index, response_time_ms')
+        .in('session_question_id', sqIds)
 
-      // 3–5 in parallel: answers, slot assignments, player answers
-      const [answersRes, slotsRes, paRes] = await Promise.all([
-        supabase
-          .from('answers')
-          .select('id, question_id, answer_text, is_correct')
-          .in('question_id', questionIds),
-        supabase
-          .from('session_question_answers')
-          .select('question_id, slot_index, answer_id, icon')
-          .eq('session_id', sessionId),
-        playerIds.length > 0
-          ? supabase
-              .from('player_answers')
-              .select('question_id, answer_id, response_time_ms')
-              .in('player_id', playerIds)
-          : Promise.resolve({ data: [] }),
-      ])
-
-      const answers = answersRes.data ?? []
-      const slots = slotsRes.data ?? []
-      const playerAnswers = paRes.data ?? []
-
-      // Index everything by question_id
+      // Index by session_question_id
       const data = {}
-      for (const q of qs) {
-        data[q.id] = {
-          slots: slots.filter((s) => s.question_id === q.id).sort((a, b) => a.slot_index - b.slot_index),
-          answers: answers.filter((a) => a.question_id === q.id),
-          playerAnswers: playerAnswers.filter((pa) => pa.question_id === q.id),
+      for (const sq of sqs) {
+        data[sq.id] = {
+          slots: sq.slots ?? [],
+          sessionAnswers: (sessionAnswers ?? []).filter((sa) => sa.session_question_id === sq.id),
+          correct_slot_indices: sq.correct_slot_indices ?? [],
         }
       }
       setQuestionData(data)
@@ -74,7 +56,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
     }
 
     fetchAll()
-  }, [sessionId, quizId])
+  }, [sessionId])
 
   if (loading) {
     return (
@@ -130,28 +112,28 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
         <main className="flex-1 overflow-y-auto px-6 py-4">
           <h2 className="text-lg font-semibold mb-4">{t('hostResults.breakdown')}</h2>
           <div className="flex flex-col gap-6">
-            {questions.map((q, qi) => {
-              const { slots, answers, playerAnswers } = questionData[q.id] ?? { slots: [], answers: [], playerAnswers: [] }
-              const totalResponses = playerAnswers.length
-              const correctAnswerIds = new Set(answers.filter((a) => a.is_correct).map((a) => a.id))
-              const correctResponses = playerAnswers.filter((pa) => correctAnswerIds.has(pa.answer_id)).length
+            {questions.map((sq, qi) => {
+              const { slots, sessionAnswers, correct_slot_indices } = questionData[sq.id] ?? { slots: [], sessionAnswers: [], correct_slot_indices: [] }
+              const correctSlotSet = new Set(correct_slot_indices)
+              const totalResponses = sessionAnswers.length
+              const correctResponses = sessionAnswers.filter((sa) => correctSlotSet.has(sa.slot_index)).length
               const pctCorrect = totalResponses > 0 ? Math.round((correctResponses / totalResponses) * 100) : null
-              const timesMs = playerAnswers.map((pa) => pa.response_time_ms).filter((t) => t != null)
+              const timesMs = sessionAnswers.map((sa) => sa.response_time_ms).filter((v) => v != null)
               const avgTimeS = timesMs.length > 0 ? (timesMs.reduce((a, b) => a + b, 0) / timesMs.length / 1000).toFixed(1) : null
 
-              // Count responses per answer_id
-              const countByAnswer = {}
-              for (const pa of playerAnswers) {
-                countByAnswer[pa.answer_id] = (countByAnswer[pa.answer_id] ?? 0) + 1
+              // Count responses per slot_index
+              const countBySlot = {}
+              for (const sa of sessionAnswers) {
+                countBySlot[sa.slot_index] = (countBySlot[sa.slot_index] ?? 0) + 1
               }
 
               return (
-                <div key={q.id} className="bg-indigo-50 rounded-xl p-5 flex gap-4">
+                <div key={sq.id} className="bg-indigo-50 rounded-xl p-5 flex gap-4">
                   {/* Optional image — left side */}
-                  {q.image_url && (
+                  {sq.image_url && (
                     <div className="w-32 h-28 shrink-0 self-start rounded-lg overflow-hidden bg-indigo-100/50 flex items-center justify-center">
                       <img
-                        src={q.image_url}
+                        src={sq.image_url}
                         alt=""
                         className="max-w-full max-h-full object-contain"
                       />
@@ -164,7 +146,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                       <span className="text-gray-400 font-mono text-sm mt-0.5 shrink-0">Q{qi + 1}</span>
-                      <p className="font-semibold text-gray-900">{q.question_text}</p>
+                      <p className="font-semibold text-gray-900">{sq.question_text}</p>
                     </div>
                     <div className="flex gap-4 text-sm shrink-0">
                       {pctCorrect !== null && (
@@ -183,10 +165,9 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                   {slots.length > 0 && (
                     <div className="flex flex-col gap-2">
                       {slots.map((slot) => {
-                        const answer = answers.find((a) => a.id === slot.answer_id)
-                        const count = countByAnswer[slot.answer_id] ?? 0
+                        const count = countBySlot[slot.slot_index] ?? 0
                         const barWidth = totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0
-                        const isCorrect = correctAnswerIds.has(slot.answer_id)
+                        const isCorrect = correctSlotSet.has(slot.slot_index)
                         return (
                           <div key={slot.slot_index} className="flex items-center gap-3">
                             {/* Color + icon chip */}
@@ -194,7 +175,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                               className="w-8 h-8 rounded flex items-center justify-center shrink-0"
                               style={{ backgroundColor: SLOT_COLORS[slot.slot_index] }}
                             >
-                              <SlotIcon name={slot.icon} size={18} className="text-white" />
+                              <SlotIcon name={SLOT_ICONS[slot.slot_index]} size={18} className="text-white" />
                             </div>
                             {/* Bar */}
                             <div className="flex-1 flex items-center gap-2">
@@ -214,7 +195,7 @@ export default function HostResults({ sessionId, quizId, onHostAgain }) {
                             <div className="flex items-center gap-1 w-40 lg:w-56 shrink-0">
                               {isCorrect && <span className="text-emerald-400 font-bold">✓</span>}
                               <span className={`text-sm truncate ${isCorrect ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-                                {answer?.answer_text ?? ''}
+                                {slot.answer_text}
                               </span>
                             </div>
                           </div>

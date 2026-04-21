@@ -1,42 +1,43 @@
 import SlotIcon from './SlotIcon'
-import { SLOT_COLORS } from '../lib/slots'
+import { SLOT_COLORS, SLOT_ICONS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Full-screen between-question view: correct answer revealed, per-slot counts,
 // optional top-5 leaderboard. Shown after a question closes, before Next is pressed.
 export default function HostQuestionReview({
   joinCode,
-  question,
+  sessionQuestion,  // full session_questions row (includes correct_slot_indices, slots)
   currentQuestionIndex,
   totalQuestions,
-  slots,
-  answerCounts,    // map: answer_id → count
+  answerCounts,    // map: slot_index → count
   leaderboard,     // array of { id, nickname, score } or null if disabled
-  loadingSlots,
+  loadingNext,
   isFullscreen,
   onToggleFullscreen,
   onNext,
   onEnd,
 }) {
   const { t } = useI18n()
+  const slots = sessionQuestion?.slots ?? []
+  const correctSlotIndices = sessionQuestion?.correct_slot_indices ?? []
   const totalAnswers = Object.values(answerCounts).reduce((a, b) => a + b, 0)
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gray-50">
       {/* Question text */}
       <div className="flex items-center justify-center px-16 py-6 min-h-48">
-        {question && (
+        {sessionQuestion && (
           <h1 className="text-6xl md:text-7xl font-bold text-center text-gray-900 leading-tight">
-            {question.question_text}
+            {sessionQuestion.question_text}
           </h1>
         )}
       </div>
 
       {/* Question image */}
-      {question?.image_url && (
+      {sessionQuestion?.image_url && (
         <div className="flex justify-center px-4 pb-2">
           <img
-            src={question.image_url}
+            src={sessionQuestion.image_url}
             alt=""
             className="h-[25vh] w-full object-contain rounded-xl"
           />
@@ -47,10 +48,9 @@ export default function HostQuestionReview({
       <div className="flex-1 flex gap-4 px-4 pb-4 min-h-0">
         {/* Slot grid */}
         <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
-          {slots?.map((slot) => {
-            const answer = question?.answers?.find((a) => a.id === slot.answer_id)
-            const isCorrect = answer?.is_correct ?? false
-            const count = answerCounts[slot.answer_id] ?? 0
+          {slots.map((slot) => {
+            const isCorrect = correctSlotIndices.includes(slot.slot_index)
+            const count = answerCounts[slot.slot_index] ?? 0
             const pct = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0
 
             return (
@@ -62,9 +62,9 @@ export default function HostQuestionReview({
                 {isCorrect && (
                   <div className="absolute inset-0 ring-8 ring-inset ring-emerald-300 rounded-2xl pointer-events-none" />
                 )}
-                <SlotIcon name={slot.icon} className="text-white flex-shrink-0" size={100} />
+                <SlotIcon name={SLOT_ICONS[slot.slot_index]} className="text-white flex-shrink-0" size={100} />
                 <span className="text-white font-bold text-5xl md:text-6xl flex-1 leading-tight">
-                  {answer?.answer_text ?? ''}
+                  {slot.answer_text}
                 </span>
                 {/* Count badge — bottom-right */}
                 <div className="flex flex-col items-end shrink-0">
@@ -116,10 +116,10 @@ export default function HostQuestionReview({
           </button>
           <button
             onClick={currentQuestionIndex >= totalQuestions - 1 ? onEnd : onNext}
-            disabled={loadingSlots}
+            disabled={loadingNext}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-5 px-16 rounded-lg transition-colors text-2xl"
           >
-            {loadingSlots ? '…' : t('hostReview.nextQuestion')}
+            {loadingNext ? '…' : t('hostReview.nextQuestion')}
           </button>
         </div>
 

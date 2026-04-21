@@ -7,45 +7,148 @@ import HostActiveQuestion from './HostActiveQuestion'
 import HostQuestionReview from './HostQuestionReview'
 import HostResults from './HostResults'
 import Header from './Header'
-import { byOrderIndex } from '../lib/utils'
 
-// Shown at /host/:sessionId. Manages the live game: waiting room, active
-// question display, and the finished state.
+// Shown at /host?sessionId=<uuid>. Manages the live game: waiting room,
+// active question display, review screen, and the finished state.
 export default function HostSession({ sessionId }) {
   const navigate = useNavigate()
   const { t } = useI18n()
   const [joinCode, setJoinCode] = useState(null)
   const [quizId, setQuizId] = useState(null)
   const [sessionState, setSessionState] = useState('waiting')
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  // Full session_questions row for the currently active question.
+  // Has: id, question_index, question_text, image_url, time_limit, points,
+  //      slots ([{slot_index, answer_id, answer_text}]), started_at,
+  //      closed_at, correct_slot_indices
+  const [activeSessionQuestion, setActiveSessionQuestion] = useState(null)
   const [totalQuestions, setTotalQuestions] = useState(0)
   const [players, setPlayers] = useState([])
-  const [questionOpen, setQuestionOpen] = useState(true)
   const [answerCount, setAnswerCount] = useState(0)
-  const [currentQuestionSlots, setCurrentQuestionSlots] = useState(null)
   const [shuffleAnswers, setShuffleAnswers] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(true)
-  const [reviewAnswerCounts, setReviewAnswerCounts] = useState({}) // answer_id → count
+  const [reviewAnswerCounts, setReviewAnswerCounts] = useState({}) // slot_index → count
   const [reviewLeaderboard, setReviewLeaderboard] = useState(null)
-  const [hostQuestions, setHostQuestions] = useState([])
   const [timeRemaining, setTimeRemaining] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [loadingNext, setLoadingNext] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const containerRef = useRef(null)
   const answersChannelRef = useRef(null)
-  const questionOpenRef = useRef(true)
+  // Ref copy of sessionState so the timer interval callback always reads the
+  // current value without a stale closure.
+  const sessionStateRef = useRef('waiting')
   const hostSecretRef = useRef(localStorage.getItem(`host_${sessionId}`) ?? null)
+  // Track the previously seen active_question_id so the realtime handler can
+  // detect question changes without reading (potentially stale) React state.
+  const prevActiveQuestionIdRef = useRef(null)
+  // showLeaderboard ref so fetchReviewData can read the current value from inside
+  // the realtime callback without a stale closure.
+  const showLeaderboardRef = useRef(true)
 
-  // Track fullscreen state changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
+  // ─── Helper functions ─────────────────────────────────────────────────────
+  // All functions are defined before the useEffects that call them so the
+  // linter can verify call order.
+
+  function loadSessionQuestion(sqId) {
+    supabase
+      .from('session_questions')
+      .select('id, question_index, question_text, image_url, time_limit, points, slots, started_at, closed_at, correct_slot_indices')
+      .eq('id', sqId)
+      .single()
+      .then(({ data: sq }) => { if (sq) setActiveSessionQuestion(sq) })
+  }
+
+  function fetchReviewData(sqId) {
+    supabase
+      .from('session_answers')
+      .select('slot_index')
+      .eq('session_question_id', sqId)
+      .then(({ data }) => {
+        const counts = {}
+        for (const sa of data ?? []) {
+          counts[sa.slot_index] = (counts[sa.slot_index] ?? 0) + 1
+        }
+        setReviewAnswerCounts(counts)
+      })
+
+    if (showLeaderboardRef.current) {
+      supabase
+        .from('players')
+        .select('id, nickname, score')
+        .eq('session_id', sessionId)
+        .order('score', { ascending: false })
+        .limit(5)
+        .then(({ data }) => setReviewLeaderboard(data ?? []))
     }
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [])
+  }
+
+  function subscribeToAnswers(sqId) {
+    if (answersChannelRef.current) {
+      supabase.removeChannel(answersChannelRef.current)
+    }
+    console.log('[host] Subscribing to answers for session_question', sqId)
+    const ch = supabase
+      .channel(`answers-${sessionId}-${sqId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'session_answers', filter: `session_question_id=eq.${sqId}` },
+        () => setAnswerCount((c) => c + 1)
+      )
+      .subscribe((status) => console.log('[host] Answers channel:', status))
+    answersChannelRef.current = ch
+  }
+
+  async function closeQuestion() {
+    if (sessionStateRef.current !== 'asking') return
+    console.log('[host] Closing question…')
+    const { error: err } = await supabase.rpc('score_question', {
+      p_session_id: sessionId,
+      p_host_secret: hostSecretRef.current,
+    })
+    if (err) { console.error('[host] score_question failed:', err.message); setError(err.message) }
+    // State transitions to 'reviewing' via the realtime event.
+  }
+
+  async function openNextQuestion() {
+    console.log(`[host] Opening next question (shuffle=${shuffleAnswers})…`)
+    setLoadingNext(true)
+    const { data: sq, error: sqError } = await supabase.rpc('next_question', {
+      p_session_id: sessionId,
+      p_host_secret: hostSecretRef.current,
+      p_shuffle: shuffleAnswers,
+    })
+    setLoadingNext(false)
+    if (sqError) { console.error('[host] next_question failed:', sqError.message); setError(sqError.message); return }
+
+    console.log('[host] Question', sq.question_index + 1, 'opened')
+    // Populate started_at client-side (the RPC doesn't return it). Using Date.now()
+    // gives < 1 s drift, which is acceptable for the host's own timer.
+    // On reconnect the full row is fetched from the DB with the accurate value.
+    const question = { ...sq, started_at: new Date().toISOString() }
+    setActiveSessionQuestion(question)
+    setAnswerCount(0)
+    setReviewAnswerCounts({})
+    setReviewLeaderboard(null)
+    subscribeToAnswers(sq.id)
+  }
+
+  async function endGame() {
+    console.log('[host] Ending game…')
+    const { error: err } = await supabase.rpc('end_session', {
+      p_session_id: sessionId,
+      p_host_secret: hostSecretRef.current,
+    })
+    if (err) { console.error('[host] end_session failed:', err.message); setError(err.message) }
+  }
+
+  async function hostAgain() {
+    console.log('[host] Creating new session for same quiz…')
+    const { data, error: err } = await supabase.rpc('create_session', { p_quiz_id: quizId })
+    if (err) { console.error('[host] create_session failed:', err.message); setError(err.message); return }
+    localStorage.setItem(`host_${data.session_id}`, data.host_secret)
+    navigate(`/host?sessionId=${data.session_id}`)
+  }
 
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
@@ -55,11 +158,24 @@ export default function HostSession({ sessionId }) {
     }
   }
 
+  // ─── Effects ──────────────────────────────────────────────────────────────
+
+  // Keep refs in sync with state
+  useEffect(() => { sessionStateRef.current = sessionState }, [sessionState])
+  useEffect(() => { showLeaderboardRef.current = showLeaderboard }, [showLeaderboard])
+
+  // Track fullscreen state changes
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
   // Load session on mount
   useEffect(() => {
     supabase
       .from('sessions')
-      .select('id, join_code, state, current_question_index, quiz_id, question_open')
+      .select('id, join_code, state, quiz_id, active_question_id')
       .eq('id', sessionId)
       .single()
       .then(({ data, error: err }) => {
@@ -70,21 +186,12 @@ export default function HostSession({ sessionId }) {
         }
         setJoinCode(data.join_code)
         setSessionState(data.state)
-        setCurrentQuestionIndex(data.current_question_index ?? 0)
+        sessionStateRef.current = data.state
         setQuizId(data.quiz_id)
-        setQuestionOpen(data.question_open ?? true)
+        prevActiveQuestionIdRef.current = data.active_question_id
 
-        if (data.state === 'active') {
-          supabase
-            .from('questions')
-            .select('id, question_text, time_limit, points, image_url, answers(id, answer_text, order_index, is_correct)')
-            .eq('quiz_id', data.quiz_id)
-            .order('order_index')
-            .then(({ data: qs }) => {
-              if (qs) {
-                setHostQuestions(qs.map((q) => ({ ...q, answers: [...q.answers].sort(byOrderIndex) })))
-              }
-            })
+        if (data.active_question_id) {
+          loadSessionQuestion(data.active_question_id)
         }
 
         setLoading(false)
@@ -94,9 +201,7 @@ export default function HostSession({ sessionId }) {
           .select('id, nickname')
           .eq('session_id', data.id)
           .order('joined_at')
-          .then(({ data: ps }) => {
-            if (ps) setPlayers(ps)
-          })
+          .then(({ data: ps }) => { if (ps) setPlayers(ps) })
       })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- sessionId intentionally only read on mount
 
@@ -113,7 +218,7 @@ export default function HostSession({ sessionId }) {
       })
   }, [quizId])
 
-  // Realtime: session state changes + player joins
+  // Realtime: session state/active_question_id changes + player joins
   useEffect(() => {
     console.log('[host] Subscribing to session and player channels…')
     const sessionChannel = supabase
@@ -122,11 +227,29 @@ export default function HostSession({ sessionId }) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
         (payload) => {
-          console.log('[host] Session update:', payload.new.state, 'q', payload.new.current_question_index, payload.new.question_open ? 'open' : 'closed')
-          setSessionState(payload.new.state)
-          setCurrentQuestionIndex(payload.new.current_question_index)
-          setQuestionOpen(payload.new.question_open ?? true)
-          setCurrentQuestionSlots(payload.new.current_question_slots ?? null)
+          const { state, active_question_id } = payload.new
+          console.log('[host] Session update: state=%s aqid=%s', state, active_question_id)
+
+          setSessionState(state)
+          sessionStateRef.current = state
+
+          if (active_question_id !== prevActiveQuestionIdRef.current) {
+            prevActiveQuestionIdRef.current = active_question_id
+            setAnswerCount(0)
+            setReviewAnswerCounts({})
+            setReviewLeaderboard(null)
+
+            if (active_question_id) {
+              subscribeToAnswers(active_question_id)
+              loadSessionQuestion(active_question_id)
+            }
+          }
+
+          if (state === 'reviewing' && active_question_id) {
+            // Re-fetch to get correct_slot_indices (set by score_question).
+            loadSessionQuestion(active_question_id)
+            fetchReviewData(active_question_id)
+          }
         }
       )
       .subscribe((status) => console.log('[host] Session channel:', status))
@@ -148,197 +271,61 @@ export default function HostSession({ sessionId }) {
       supabase.removeChannel(sessionChannel)
       supabase.removeChannel(playersChannel)
     }
-  }, [sessionId])
+  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps -- helper functions are stable within mount lifetime
 
-  // Realtime: re-subscribe to player_answers whenever the current question changes
+  // Unsubscribe from answers channel on unmount
   useEffect(() => {
-    if (!quizId || sessionState !== 'active') return
-
-    // hostQuestions may not be loaded yet; fall back to a DB query for the question id
-    const questionId = hostQuestions[currentQuestionIndex]?.id
-    if (!questionId) {
-      supabase
-        .from('questions')
-        .select('id')
-        .eq('quiz_id', quizId)
-        .order('order_index')
-        .then(({ data: qs }) => {
-          const qid = qs?.[currentQuestionIndex]?.id
-          if (!qid) return
-          subscribeToAnswers(qid)
-        })
-    } else {
-      subscribeToAnswers(questionId)
-    }
-
-    function subscribeToAnswers(qid) {
-      if (answersChannelRef.current) {
-        supabase.removeChannel(answersChannelRef.current)
-      }
-      console.log('[host] Subscribing to answers for question', qid)
-      const ch = supabase
-        .channel(`answers-${sessionId}-${qid}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'player_answers', filter: `question_id=eq.${qid}` },
-          () => setAnswerCount((c) => c + 1)
-        )
-        .subscribe((status) => console.log('[host] Answers channel:', status))
-      answersChannelRef.current = ch
-    }
-
     return () => {
       if (answersChannelRef.current) {
         supabase.removeChannel(answersChannelRef.current)
         answersChannelRef.current = null
       }
     }
-  }, [sessionId, quizId, currentQuestionIndex, sessionState]) // eslint-disable-line react-hooks/exhaustive-deps -- hostQuestions omitted: effect falls back to a DB query when not yet loaded; adding it would cause spurious re-subscriptions on question load
-
-  // Keep questionOpenRef in sync for use inside the timer callback
-  useEffect(() => { questionOpenRef.current = questionOpen }, [questionOpen])
+  }, [])
 
   // Auto-close the question when every player has answered
   useEffect(() => {
-    if (!questionOpen || sessionState !== 'active') return
+    if (sessionState !== 'asking') return
     if (players.length === 0 || answerCount < players.length) return
-    if (questionOpenRef.current) closeQuestion() // eslint-disable-line react-hooks/immutability -- closeQuestion is a hoisted function declaration; available at runtime despite appearing later in the file
-  }, [answerCount, questionOpen, sessionState, players]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
-
-  // Fetch review data (answer distribution + optional leaderboard) when a question closes
-  useEffect(() => {
-    if (questionOpen || sessionState !== 'active') {
-      setReviewAnswerCounts({})
-      setReviewLeaderboard(null)
-      return
-    }
-    const questionId = hostQuestions[currentQuestionIndex]?.id
-    const playerIds = players.map((p) => p.id)
-    if (!questionId || playerIds.length === 0) return
-
-    supabase
-      .from('player_answers')
-      .select('answer_id')
-      .eq('question_id', questionId)
-      .in('player_id', playerIds)
-      .then(({ data }) => {
-        const counts = {}
-        for (const pa of data ?? []) {
-          counts[pa.answer_id] = (counts[pa.answer_id] ?? 0) + 1
-        }
-        setReviewAnswerCounts(counts)
-      })
-
-    if (showLeaderboard) {
-      supabase
-        .from('players')
-        .select('id, nickname, score')
-        .eq('session_id', sessionId)
-        .order('score', { ascending: false })
-        .limit(5)
-        .then(({ data }) => setReviewLeaderboard(data ?? []))
-    }
-  }, [questionOpen, currentQuestionIndex, sessionState]) // eslint-disable-line react-hooks/exhaustive-deps -- reads current snapshot of players/hostQuestions/sessionId/showLeaderboard
+    closeQuestion()
+  }, [answerCount, sessionState, players]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
 
   // Countdown timer — resets when a new question opens
   useEffect(() => {
-    if (!questionOpen || sessionState !== 'active') {
+    if (sessionState !== 'asking' || !activeSessionQuestion) {
       setTimeRemaining(null)
       return
     }
-    const question = hostQuestions[currentQuestionIndex]
-    if (!question) return
-    setTimeRemaining(question.time_limit ?? 30)
+    const { time_limit, started_at } = activeSessionQuestion
+    if (!time_limit || time_limit === 0) {
+      setTimeRemaining(null)
+      return
+    }
+
+    const elapsedMs = Date.now() - new Date(started_at).getTime()
+    const initial = Math.max(0, time_limit - Math.floor(elapsedMs / 1000))
+    setTimeRemaining(initial)
+
+    if (initial === 0) {
+      closeQuestion()
+      return
+    }
+
     const interval = setInterval(() => {
-      setTimeRemaining((t) => {
-        if (t === null || t <= 0) {
+      setTimeRemaining((remaining) => {
+        if (remaining === null || remaining <= 0) {
           clearInterval(interval)
-          if (questionOpenRef.current) closeQuestion()
+          if (sessionStateRef.current === 'asking') closeQuestion()
           return 0
         }
-        return t - 1
+        return remaining - 1
       })
     }, 1000)
+
     return () => clearInterval(interval)
-  }, [questionOpen, currentQuestionIndex, sessionState, hostQuestions]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
+  }, [sessionState, activeSessionQuestion?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- closeQuestion is stable
 
-  async function startGame() {
-    console.log('[host] Fetching questions…')
-    const { data: qs } = await supabase
-      .from('questions')
-      .select('id, question_text, time_limit, points, image_url, answers(id, answer_text, order_index, is_correct)')
-      .eq('quiz_id', quizId)
-      .order('order_index')
-    const sortedQs = qs ? qs.map((q) => ({ ...q, answers: [...q.answers].sort(byOrderIndex) })) : []
-    const firstQuestionId = sortedQs[0]?.id
-    if (!firstQuestionId) { setError(t('hostSession.noQuestions')); return }
-
-    console.log(`[host] Starting game (${sortedQs.length} question(s), shuffle=${shuffleAnswers})…`)
-    setLoadingSlots(true)
-    const { data: slots, error: slotsError } = await supabase.rpc('start_game', {
-      p_session_id: sessionId,
-      p_host_secret: hostSecretRef.current,
-      p_first_question_id: firstQuestionId,
-      p_shuffle: shuffleAnswers,
-    })
-    setLoadingSlots(false)
-    if (slotsError) { console.error('[host] start_game failed:', slotsError.message); setError(slotsError.message); return }
-
-    console.log('[host] Game started — question 1 open')
-    setCurrentQuestionSlots(slots)
-    setHostQuestions(sortedQs)
-    setTotalQuestions(sortedQs.length)
-    setAnswerCount(0)
-  }
-
-  async function nextQuestion() {
-    const next = currentQuestionIndex + 1
-    const nextQuestionId = hostQuestions[next]?.id
-    if (!nextQuestionId) return
-
-    console.log(`[host] Opening question ${next + 1}…`)
-    setLoadingSlots(true)
-    const { data: slots, error: slotsError } = await supabase.rpc('open_next_question', {
-      p_session_id: sessionId,
-      p_host_secret: hostSecretRef.current,
-      p_question_index: next,
-      p_question_id: nextQuestionId,
-      p_shuffle: shuffleAnswers,
-    })
-    setLoadingSlots(false)
-    if (slotsError) { console.error('[host] open_next_question failed:', slotsError.message); setError(slotsError.message); return }
-
-    console.log(`[host] Question ${next + 1} open`)
-    setCurrentQuestionSlots(slots)
-    setAnswerCount(0)
-  }
-
-  async function closeQuestion() {
-    if (!questionOpen) return
-    console.log('[host] Closing question…')
-    const { error } = await supabase.rpc('close_question', {
-      p_session_id: sessionId,
-      p_host_secret: hostSecretRef.current,
-    })
-    if (error) { console.error('[host] close_question failed:', error.message); setError(error.message) }
-  }
-
-  async function endGame() {
-    console.log('[host] Ending game…')
-    const { error } = await supabase.rpc('end_game', {
-      p_session_id: sessionId,
-      p_host_secret: hostSecretRef.current,
-    })
-    if (error) { console.error('[host] end_game failed:', error.message); setError(error.message) }
-  }
-
-  async function hostAgain() {
-    console.log('[host] Creating new session for same quiz…')
-    const { data, error: err } = await supabase.rpc('create_session', { p_quiz_id: quizId })
-    if (err) { console.error('[host] create_session failed:', err.message); setError(err.message); return }
-    localStorage.setItem(`host_${data.session_id}`, data.host_secret)
-    navigate(`/host?sessionId=${data.session_id}`)
-  }
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -348,12 +335,10 @@ export default function HostSession({ sessionId }) {
     )
   }
 
-  // Results screen takes over the full viewport
   if (sessionState === 'finished') {
     return (
       <HostResults
         sessionId={sessionId}
-        quizId={quizId}
         onHostAgain={hostAgain}
       />
     )
@@ -375,43 +360,41 @@ export default function HostSession({ sessionId }) {
             onShuffleChange={setShuffleAnswers}
             showLeaderboard={showLeaderboard}
             onShowLeaderboardChange={setShowLeaderboard}
-            loadingSlots={loadingSlots}
-            onStart={startGame}
+            loadingSlots={loadingNext}
+            onStart={openNextQuestion}
           />
         )}
 
-        {sessionState === 'active' && questionOpen && (
+        {sessionState === 'asking' && (
           <HostActiveQuestion
             joinCode={joinCode}
-            question={hostQuestions[currentQuestionIndex]}
-            currentQuestionIndex={currentQuestionIndex}
+            sessionQuestion={activeSessionQuestion}
+            currentQuestionIndex={activeSessionQuestion?.question_index ?? 0}
             totalQuestions={totalQuestions}
             timeRemaining={timeRemaining}
-            slots={currentQuestionSlots}
             answerCount={answerCount}
             playerCount={players.length}
-            loadingSlots={loadingSlots}
+            loadingNext={loadingNext}
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}
             onClose={closeQuestion}
-            onNext={nextQuestion}
+            onNext={openNextQuestion}
             onEnd={endGame}
           />
         )}
 
-        {sessionState === 'active' && !questionOpen && (
+        {sessionState === 'reviewing' && (
           <HostQuestionReview
             joinCode={joinCode}
-            question={hostQuestions[currentQuestionIndex]}
-            currentQuestionIndex={currentQuestionIndex}
+            sessionQuestion={activeSessionQuestion}
+            currentQuestionIndex={activeSessionQuestion?.question_index ?? 0}
             totalQuestions={totalQuestions}
-            slots={currentQuestionSlots}
             answerCounts={reviewAnswerCounts}
             leaderboard={showLeaderboard ? reviewLeaderboard : null}
-            loadingSlots={loadingSlots}
+            loadingNext={loadingNext}
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}
-            onNext={nextQuestion}
+            onNext={openNextQuestion}
             onEnd={endGame}
           />
         )}

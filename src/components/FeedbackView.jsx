@@ -1,4 +1,5 @@
 import SlotIcon from './SlotIcon'
+import { SLOT_ICONS } from '../lib/slots'
 import { useI18n } from '../context/I18nContext'
 
 // Shown on the player screen after a question closes: result banner,
@@ -28,7 +29,7 @@ export default function FeedbackView({ isCorrect, pointsEarned, slots, slotProps
           const { className, style } = slotProps(slot.slot_index)
           return (
             <div key={slot.slot_index} className={className} style={style}>
-              <SlotIcon name={slot.icon} />
+              <SlotIcon name={SLOT_ICONS[slot.slot_index]} />
             </div>
           )
         })}

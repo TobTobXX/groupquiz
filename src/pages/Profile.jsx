@@ -32,15 +32,18 @@ export default function Profile() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: profile }, { data: end }] = await Promise.all([
-        supabase.from('profiles').select('username, is_pro, stripe_cancel_at_period_end').eq('id', user.id).single(),
+      const [{ data: profile }, { data: subscription }, { data: end }] = await Promise.all([
+        supabase.from('profiles').select('username').eq('id', user.id).single(),
+        supabase.from('subscriptions').select('is_pro, stripe_cancel_at_period_end').eq('id', user.id).single(),
         supabase.rpc('get_my_subscription_period_end'),
       ])
 
       if (profile) {
         setUsername(profile.username ?? '')
-        setIsPro(profile.is_pro ?? false)
-        setCancelAtPeriodEnd(profile.stripe_cancel_at_period_end ?? false)
+      }
+      if (subscription) {
+        setIsPro(subscription.is_pro ?? false)
+        setCancelAtPeriodEnd(subscription.stripe_cancel_at_period_end ?? false)
       }
       setPeriodEnd(end ?? null)
       setLoading(false)
