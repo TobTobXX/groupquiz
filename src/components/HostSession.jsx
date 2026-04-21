@@ -175,7 +175,7 @@ export default function HostSession({ sessionId }) {
   useEffect(() => {
     supabase
       .from('sessions')
-      .select('id, join_code, state, quiz_id, active_question_id')
+      .select('id, state, quiz_id, active_question_id')
       .eq('id', sessionId)
       .single()
       .then(({ data, error: err }) => {
@@ -184,7 +184,7 @@ export default function HostSession({ sessionId }) {
           setLoading(false)
           return
         }
-        setJoinCode(data.join_code)
+        setJoinCode(localStorage.getItem(`host_${sessionId}_join_code`) ?? '')
         setSessionState(data.state)
         sessionStateRef.current = data.state
         setQuizId(data.quiz_id)

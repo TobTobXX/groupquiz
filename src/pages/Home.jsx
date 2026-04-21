@@ -17,17 +17,6 @@ export default function Home() {
     e.preventDefault()
     setError(null)
 
-    const { data: session, error: sessionError } = await supabase
-      .from('sessions')
-      .select('state')
-      .eq('join_code', code)
-      .maybeSingle()
-
-    if (sessionError || !session || !['waiting', 'active'].includes(session.state)) {
-      setError(t('home.sessionNotFound'))
-      return
-    }
-
     const stored = JSON.parse(localStorage.getItem(`player_${code}`) ?? 'null')
     if (stored?.player_id) {
       const { data: existingPlayer } = await supabase

@@ -59,6 +59,7 @@ export default function HostLibrary() {
     const { data, error: err } = await supabase.rpc('create_session', { p_quiz_id: quizId })
     if (err) { setError(err.message); return }
     localStorage.setItem(`host_${data.session_id}`, data.host_secret)
+    localStorage.setItem(`host_${data.session_id}_join_code`, data.join_code)
     navigate(`/host?sessionId=${data.session_id}`)
   }
 
