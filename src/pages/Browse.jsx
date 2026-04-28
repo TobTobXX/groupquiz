@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { LANG_NAMES } from '../context/I18nContext'
 import Header from '../components/Header'
 import { QuizCard } from '../components/QuizCard'
+import QuizPreview from '../components/QuizPreview'
 import { useI18n } from '../context/I18nContext'
 
 export default function Browse() {
@@ -17,6 +18,7 @@ export default function Browse() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const [previewQuiz, setPreviewQuiz] = useState(null)
 
   // URL-driven filters (set by clicking tags on cards, or by the filter UI)
   const filterLang = searchParams.get('language') ?? ''
@@ -120,6 +122,13 @@ export default function Browse() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      {previewQuiz && (
+        <QuizPreview
+          quizId={previewQuiz.id}
+          quizTitle={previewQuiz.title}
+          onClose={() => setPreviewQuiz(null)}
+        />
+      )}
 
       <div className="flex-1 px-6 py-6 max-w-7xl mx-auto w-full flex flex-col gap-6">
         {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -190,6 +199,7 @@ export default function Browse() {
                   user={user}
                   t={t}
                   onHost={() => createSession(quiz.id)}
+                  onPreview={() => setPreviewQuiz(quiz)}
                   onStar={() => handleStar(quiz.id)}
                 />
               ))}

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { exportQuiz, importQuiz } from '../lib/quizExport'
 import Header from './Header'
 import { QuizCard, Section } from './QuizCard'
+import QuizPreview from './QuizPreview'
 import { useI18n } from '../context/I18nContext'
 
 export default function HostLibrary() {
@@ -17,6 +18,7 @@ export default function HostLibrary() {
   const [deleting, setDeleting] = useState(null)
   const [exporting, setExporting] = useState(null)
   const [importing, setImporting] = useState(false)
+  const [previewQuiz, setPreviewQuiz] = useState(null)
   const importInputRef = useRef(null)
 
   // Fetch own quizzes with first-question thumbnail
@@ -122,6 +124,13 @@ export default function HostLibrary() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      {previewQuiz && (
+        <QuizPreview
+          quizId={previewQuiz.id}
+          quizTitle={previewQuiz.title}
+          onClose={() => setPreviewQuiz(null)}
+        />
+      )}
 
       <div className="flex-1 px-6 py-6 max-w-7xl mx-auto w-full flex flex-col gap-8">
         {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -136,6 +145,7 @@ export default function HostLibrary() {
               user={user}
               t={t}
               onHost={() => createSession(quiz.id)}
+              onPreview={() => setPreviewQuiz(quiz)}
               onExport={() => handleExport(quiz)}
               onDelete={() => handleDelete(quiz.id)}
               exporting={exporting === quiz.id}
@@ -177,6 +187,7 @@ export default function HostLibrary() {
               user={user}
               t={t}
               onHost={() => createSession(quiz.id)}
+              onPreview={() => setPreviewQuiz(quiz)}
               onStar={() => handleUnstar(quiz.id)}
             />
           ))}
