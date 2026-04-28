@@ -1,13 +1,14 @@
 import Header from '../components/Header'
 import { useI18n } from '../context/I18nContext'
 
+const REPO_URL = 'https://codeberg.org/TobTobXX/groupquiz'
+
 const ITEMS = [
-  ['q1', 'a1'],
-  ['q2', 'a2'],
-  ['q3', 'a3'],
-  ['q4', 'a4'],
-  ['q5', 'a5'],
-  ['q6', 'a6'],
+  ['q1', 'a1', null],
+  ['q2', 'a2', null],
+  ['q3', 'a3', null],
+  ['q4', 'a4', null],
+  ['q5', 'a5', REPO_URL],
 ]
 
 export default function Faq() {
@@ -19,10 +20,20 @@ export default function Faq() {
       <main className="max-w-2xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('faq.title')}</h1>
         <div className="flex flex-col gap-6">
-          {ITEMS.map(([qKey, aKey]) => (
+          {ITEMS.map(([qKey, aKey, href]) => (
             <div key={qKey}>
               <p className="font-semibold text-gray-900 mb-1">{t(`faq.${qKey}`)}</p>
-              <p className="text-gray-600 leading-relaxed">{t(`faq.${aKey}`)}</p>
+              <p className="text-gray-600 leading-relaxed">
+                {t(`faq.${aKey}`)}
+                {href && (
+                  <>
+                    {' '}
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-900">
+                      {href}
+                    </a>
+                  </>
+                )}
+              </p>
             </div>
           ))}
         </div>
